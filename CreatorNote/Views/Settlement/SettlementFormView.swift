@@ -112,7 +112,6 @@ struct SettlementFormView: View {
             s.amount = amount
             s.fee = fee
             s.tax = tax
-            s.netAmount = netAmount
             s.settlementDate = hasSettlementDate ? settlementDate : nil
             s.isPaid = isPaid
             s.memo = memo

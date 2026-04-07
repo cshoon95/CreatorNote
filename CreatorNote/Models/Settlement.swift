@@ -9,11 +9,14 @@ final class Settlement {
     var amount: Double
     var fee: Double
     var tax: Double
-    var netAmount: Double
     var settlementDate: Date?
     var isPaid: Bool
     var memo: String
     var createdAt: Date
+
+    var netAmount: Double {
+        amount - fee - tax
+    }
 
     init(
         brandName: String,
@@ -29,14 +32,9 @@ final class Settlement {
         self.amount = amount
         self.fee = fee
         self.tax = tax
-        self.netAmount = amount - fee - tax
         self.settlementDate = settlementDate
         self.isPaid = isPaid
         self.memo = memo
         self.createdAt = .now
-    }
-
-    func recalculate() {
-        netAmount = amount - fee - tax
     }
 }

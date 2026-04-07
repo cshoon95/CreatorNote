@@ -20,17 +20,19 @@ struct GeneralNoteListView: View {
     var body: some View {
         let theme = themeManager.theme
         VStack(spacing: 0) {
-            if notes.isEmpty {
+            if filtered.isEmpty {
                 Spacer()
                 VStack(spacing: 12) {
-                    Image(systemName: "doc.text")
+                    Image(systemName: notes.isEmpty ? "doc.text" : "magnifyingglass")
                         .font(.system(size: 48))
                         .foregroundStyle(theme.primary.opacity(0.5))
-                    Text("메모가 없습니다")
+                    Text(notes.isEmpty ? "메모가 없습니다" : "검색 결과가 없습니다")
                         .foregroundStyle(theme.textSecondary)
-                    Text("자유롭게 메모를 작성해보세요")
-                        .font(.caption)
-                        .foregroundStyle(theme.textSecondary)
+                    if notes.isEmpty {
+                        Text("자유롭게 메모를 작성해보세요")
+                            .font(.caption)
+                            .foregroundStyle(theme.textSecondary)
+                    }
                 }
                 Spacer()
             } else {

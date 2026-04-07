@@ -152,14 +152,19 @@ struct RichTextEditor: UIViewRepresentable {
             let lineText = nsText.substring(with: lineRange)
 
             let mutable = NSMutableAttributedString(attributedString: textView.attributedText)
+            let cursorOffset: Int
             if lineText.hasPrefix("• ") {
                 let newLine = String(lineText.dropFirst(2))
                 mutable.replaceCharacters(in: lineRange, with: newLine)
+                cursorOffset = -2
             } else {
                 let newLine = "• " + lineText
                 mutable.replaceCharacters(in: lineRange, with: newLine)
+                cursorOffset = 2
             }
             textView.attributedText = mutable
+            let newLocation = max(0, min(range.location + cursorOffset, mutable.length))
+            textView.selectedRange = NSRange(location: newLocation, length: 0)
             parent.attributedText = mutable
             parent.plainText = textView.text
         }

@@ -80,32 +80,3 @@ struct StatusBadge: View {
     }
 }
 
-struct ThemedNavigationTitle: ViewModifier {
-    @Environment(ThemeManager.self) var themeManager
-    let title: String
-
-    func body(content: Content) -> some View {
-        content
-            .navigationTitle(title)
-            .toolbarBackground(themeManager.theme.background, for: .navigationBar)
-    }
-}
-
-extension View {
-    func themedBackground() -> some View {
-        modifier(ThemedBackgroundModifier())
-    }
-
-    func themedNavigationTitle(_ title: String) -> some View {
-        modifier(ThemedNavigationTitle(title: title))
-    }
-}
-
-struct ThemedBackgroundModifier: ViewModifier {
-    @Environment(ThemeManager.self) var themeManager
-
-    func body(content: Content) -> some View {
-        content
-            .background(themeManager.theme.background)
-    }
-}
