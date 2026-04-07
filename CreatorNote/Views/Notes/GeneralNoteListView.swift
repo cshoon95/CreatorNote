@@ -1,0 +1,94 @@
+import SwiftUI
+import SwiftData
+
+struct GeneralNoteListView: View {
+    @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \GeneralNote.updatedAt, order: .reverse) private var notes: [GeneralNote]
+    @State private var showingEditor = false
+    @State private var selectedNote: GeneralNote?
+    @State private var searchText = ""
+
+    private var filtered: [GeneralNote] {
+        if searchText.isEmpty { return notes }
+        return notes.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            $0.plainContent.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+
+    var body: some View {
+        let theme = themeManager.theme
+        VStack(spacing: 0) {
+            if notes.isEmpty {
+                Spacer()
+                VStack(spacing: 12) {
+                    Image(systemName: "doc.text")
+                        .font(.system(size: 48))
+                        .foregroundStyle(theme.primary.opacity(0.5))
+                    Text("메모가 없습니다")
+                        .foregroundStyle(theme.textSecondary)
+                    Text("자유롭게 메모를 작성해보세요")
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                Spacer()
+            } else {
+                List {
+                    ForEach(filtered) { note in
+                        Button {
+                            selectedNote = note
+                            showingEditor = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(theme.textPrimary)
+                                if !note.plainContent.isEmpty {
+                                    Text(note.plainContent.prefix(60))
+                                        .font(.caption)
+                                        .foregroundStyle(theme.textSecondary)
+                                        .lineLimit(2)
+                                }
+                                Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
+                                    .font(.caption2)
+                                    .foregroundStyle(theme.textSecondary.opacity(0.7))
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .listRowBackground(theme.cardBackground)
+                    }
+                    .onDelete(perform: delete)
+                }
+                .scrollContentBackground(.hidden)
+                .searchable(text: $searchText, prompt: "메모 검색")
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                selectedNote = nil
+                showingEditor = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(
+                        LinearGradient(colors: themeManager.theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: themeManager.theme.primary.opacity(0.3), radius: 8, y: 4)
+            }
+            .padding(20)
+        }
+        .sheet(isPresented: $showingEditor) {
+            NoteEditorView(generalNote: selectedNote)
+        }
+    }
+
+    private func delete(at offsets: IndexSet) {
+        for index in offsets {
+            modelContext.delete(filtered[index])
+        }
+    }
+}
