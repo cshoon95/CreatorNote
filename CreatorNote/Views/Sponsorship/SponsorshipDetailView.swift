@@ -40,7 +40,7 @@ struct SponsorshipDetailView: View {
                             Label("금액", systemImage: "wonsign.circle")
                                 .foregroundStyle(theme.textSecondary)
                             Spacer()
-                            Text(formatCurrency(sponsorship.amount))
+                            Text(sponsorship.amount.krwFormatted)
                                 .font(.headline)
                                 .foregroundStyle(theme.primary)
                         }
@@ -109,17 +109,13 @@ struct SponsorshipDetailView: View {
         }
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "₩0"
-    }
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MM.dd"
+        return f
+    }()
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM.dd"
-        return formatter.string(from: date)
+        Self.dateFormatter.string(from: date)
     }
 }

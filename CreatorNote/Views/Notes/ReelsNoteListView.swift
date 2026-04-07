@@ -86,7 +86,10 @@ struct ReelsNoteListView: View {
 
     @ViewBuilder
     private func filterChip(label: String, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: {
+            Haptic.selection()
+            action()
+        }) {
             Text(label)
                 .font(.caption.bold())
                 .padding(.horizontal, 14)

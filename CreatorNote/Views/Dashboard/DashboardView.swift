@@ -44,7 +44,7 @@ struct DashboardView: View {
                         )
                         StatCard(
                             title: "총 수익",
-                            value: formatCurrency(totalEarnings),
+                            value: totalEarnings.krwFormatted,
                             icon: "wonsign.circle.fill"
                         )
                         StatCard(
@@ -184,11 +184,4 @@ struct DashboardView: View {
         .padding(.top, 40)
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "₩0"
-    }
 }

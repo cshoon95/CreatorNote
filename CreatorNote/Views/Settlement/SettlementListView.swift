@@ -28,8 +28,8 @@ struct SettlementListView: View {
                 // Summary header
                 VStack(spacing: 12) {
                     HStack(spacing: 16) {
-                        summaryPill(title: "총 정산", value: formatCurrency(totalNet), theme: theme)
-                        summaryPill(title: "지급 완료", value: formatCurrency(paidTotal), theme: theme)
+                        summaryPill(title: "총 정산", value: totalNet.krwFormatted, theme: theme)
+                        summaryPill(title: "지급 완료", value: paidTotal.krwFormatted, theme: theme)
                     }
                     .padding(.horizontal)
 
@@ -117,7 +117,7 @@ struct SettlementListView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(formatCurrency(item.netAmount))
+                Text(item.netAmount.krwFormatted)
                     .font(.subheadline.bold())
                     .foregroundStyle(theme.textPrimary)
                 HStack(spacing: 4) {
@@ -139,11 +139,4 @@ struct SettlementListView: View {
         }
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "₩0"
-    }
 }

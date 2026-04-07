@@ -82,7 +82,11 @@ struct GeneralNoteListView: View {
             .padding(20)
         }
         .sheet(isPresented: $showingEditor) {
-            NoteEditorView(generalNote: selectedNote)
+            if let selectedNote {
+                NoteEditorView(generalNote: selectedNote)
+            } else {
+                NoteEditorView(generalNote: nil as GeneralNote?)
+            }
         }
     }
 

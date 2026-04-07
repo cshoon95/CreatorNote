@@ -51,7 +51,7 @@ struct SettlementFormView: View {
                         Text("실수령액")
                             .fontWeight(.bold)
                         Spacer()
-                        Text(formatCurrency(netAmount))
+                        Text(netAmount.krwFormatted)
                             .fontWeight(.bold)
                             .foregroundStyle(theme.primary)
                     }
@@ -131,11 +131,4 @@ struct SettlementFormView: View {
         dismiss()
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "₩0"
-    }
 }

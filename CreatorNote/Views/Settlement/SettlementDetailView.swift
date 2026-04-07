@@ -33,9 +33,9 @@ struct SettlementDetailView: View {
 
                         Divider()
 
-                        detailRow("총 금액", value: formatCurrency(settlement.amount), theme: theme)
-                        detailRow("수수료", value: formatCurrency(settlement.fee), theme: theme)
-                        detailRow("세금", value: formatCurrency(settlement.tax), theme: theme)
+                        detailRow("총 금액", value: settlement.amount.krwFormatted, theme: theme)
+                        detailRow("수수료", value: settlement.fee.krwFormatted, theme: theme)
+                        detailRow("세금", value: settlement.tax.krwFormatted, theme: theme)
 
                         Divider()
 
@@ -44,7 +44,7 @@ struct SettlementDetailView: View {
                                 .font(.headline)
                                 .foregroundStyle(theme.textPrimary)
                             Spacer()
-                            Text(formatCurrency(settlement.netAmount))
+                            Text(settlement.netAmount.krwFormatted)
                                 .font(.title2.bold())
                                 .foregroundStyle(theme.primary)
                         }
@@ -104,11 +104,4 @@ struct SettlementDetailView: View {
         }
     }
 
-    private func formatCurrency(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.maximumFractionDigits = 0
-        return formatter.string(from: NSNumber(value: value)) ?? "₩0"
-    }
 }
