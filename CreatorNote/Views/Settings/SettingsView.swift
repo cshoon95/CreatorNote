@@ -7,6 +7,50 @@ struct SettingsView: View {
         let theme = themeManager.theme
         ScrollView {
             VStack(spacing: 24) {
+                // Profile section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("계정")
+                        .font(.headline)
+                        .foregroundStyle(theme.textPrimary)
+
+                    if let profile = AuthManager.shared.currentProfile {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .frame(width: 48, height: 48)
+                                .overlay {
+                                    Text(String((profile.displayName ?? "U").prefix(1)))
+                                        .font(.title3.bold())
+                                        .foregroundStyle(.white)
+                                }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(profile.displayName ?? "사용자")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(theme.textPrimary)
+                                if let provider = profile.provider {
+                                    Text(provider)
+                                        .font(.caption)
+                                        .foregroundStyle(theme.textSecondary)
+                                }
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    NavigationLink("워크스페이스") {
+                        WorkspaceSettingsView()
+                    }
+                    .foregroundStyle(theme.primary)
+
+                    Button("로그아웃") {
+                        Task { await AuthManager.shared.signOut() }
+                    }
+                    .foregroundStyle(.red)
+                }
+                .padding()
+                .background(theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+
                 // Theme selection
                 VStack(alignment: .leading, spacing: 16) {
                     Text("테마 선택")

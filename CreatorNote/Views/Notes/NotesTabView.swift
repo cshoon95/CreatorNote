@@ -9,8 +9,14 @@ struct NotesTabView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 Picker("노트 유형", selection: $selectedSegment) {
-                    Text("릴스 노트").tag(0)
-                    Text("일반 메모").tag(1)
+                    HStack(spacing: 4) {
+                        Image(systemName: "video.fill")
+                        Text("릴스 노트")
+                    }.tag(0)
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.text")
+                        Text("일반 메모")
+                    }.tag(1)
                 }
                 .pickerStyle(.segmented)
                 .padding()
@@ -22,8 +28,7 @@ struct NotesTabView: View {
                 }
             }
             .background(theme.background)
-            .navigationTitle("노트")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

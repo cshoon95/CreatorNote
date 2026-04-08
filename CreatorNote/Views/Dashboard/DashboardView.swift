@@ -1,18 +1,18 @@
 import SwiftUI
-import SwiftData
 
 struct DashboardView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query private var sponsorships: [Sponsorship]
-    @Query private var settlements: [Settlement]
-    @Query private var reelsNotes: [ReelsNote]
 
-    private var activeSponsors: [Sponsorship] {
+    private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
+    private var settlements: [SettlementDTO] { DataManager.shared.settlements }
+    private var reelsNotes: [ReelsNoteDTO] { DataManager.shared.reelsNotes }
+    private var generalNotes: [GeneralNoteDTO] { DataManager.shared.generalNotes }
+
+    private var activeSponsors: [SponsorshipDTO] {
         sponsorships.filter { !$0.isExpired }
     }
 
-    private var expiringSoon: [Sponsorship] {
+    private var expiringSoon: [SponsorshipDTO] {
         sponsorships.filter { $0.isExpiringSoon }
     }
 
@@ -24,15 +24,24 @@ struct DashboardView: View {
         settlements.filter { !$0.isPaid }.count
     }
 
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        switch hour {
+        case 6..<12: return "좋은 아침이에요"
+        case 12..<18: return "활기찬 오후에요"
+        case 18..<22: return "수고한 하루에요"
+        default: return "늦은 밤이에요"
+        }
+    }
+
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Header gradient
                     headerSection(theme: theme)
 
-                    // Stats grid
+                    // Quick stats
                     LazyVGrid(columns: [
                         GridItem(.flexible()),
                         GridItem(.flexible())
@@ -53,8 +62,8 @@ struct DashboardView: View {
                             icon: "clock.fill"
                         )
                         StatCard(
-                            title: "릴스 노트",
-                            value: "\(reelsNotes.count)",
+                            title: "전체 노트",
+                            value: "\(reelsNotes.count + generalNotes.count)",
                             icon: "note.text"
                         )
                     }
@@ -63,19 +72,28 @@ struct DashboardView: View {
                     // Expiring soon
                     if !expiringSoon.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
+                            Label {
                                 Text("마감 임박")
                                     .font(.headline)
                                     .foregroundStyle(theme.textPrimary)
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
                             }
                             .padding(.horizontal)
 
                             ForEach(expiringSoon) { sponsor in
                                 ThemedCard {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        Circle()
+                                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                                            .frame(width: 36, height: 36)
+                                            .overlay {
+                                                Text(String(sponsor.brandName.prefix(1)))
+                                                    .font(.subheadline.bold())
+                                                    .foregroundStyle(.white)
+                                            }
+                                        VStack(alignment: .leading, spacing: 2) {
                                             Text(sponsor.brandName)
                                                 .font(.subheadline.bold())
                                                 .foregroundStyle(theme.textPrimary)
@@ -104,7 +122,11 @@ struct DashboardView: View {
 
                             ForEach(reelsNotes.prefix(3)) { note in
                                 ThemedCard {
-                                    HStack {
+                                    HStack(spacing: 12) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(statusColor(note.reelsNoteStatus).opacity(0.8))
+                                            .frame(width: 4)
+
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(note.title.isEmpty ? "제목 없음" : note.title)
                                                 .font(.subheadline.bold())
@@ -115,7 +137,7 @@ struct DashboardView: View {
                                                 .lineLimit(1)
                                         }
                                         Spacer()
-                                        StatusBadge(status: note.status)
+                                        StatusBadge(status: note.reelsNoteStatus)
                                     }
                                 }
                                 .padding(.horizontal)
@@ -131,8 +153,9 @@ struct DashboardView: View {
                 .padding(.bottom, 20)
             }
             .background(theme.background)
-            .navigationTitle("대시보드")
-            .navigationBarTitleDisplayMode(.large)
+            .refreshable {
+                await DataManager.shared.fetchAll()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: SettingsView()) {
@@ -141,27 +164,36 @@ struct DashboardView: View {
                     }
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
     @ViewBuilder
     private func headerSection(theme: AppTheme) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
             LinearGradient(
                 colors: theme.gradient,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .frame(height: 120)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .frame(height: 130)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
             .overlay {
-                VStack(spacing: 4) {
-                    Text("Creator Note")
-                        .font(.title.bold())
-                        .foregroundStyle(.white)
-                    Text("오늘도 멋진 콘텐츠를 만들어보세요 ✨")
+                VStack(spacing: 6) {
+                    Text(greeting)
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white.opacity(0.85))
+                    Text("Creator Note")
+                        .font(.system(.title, design: .rounded).bold())
+                        .foregroundStyle(.white)
+                    if activeSponsors.count > 0 {
+                        Text("진행중인 협찬 \(activeSponsors.count)건")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(.white.opacity(0.2), in: Capsule())
+                    }
                 }
             }
             .padding(.horizontal)
@@ -185,4 +217,11 @@ struct DashboardView: View {
         .padding(.top, 40)
     }
 
+    private func statusColor(_ status: ReelsNoteStatus) -> Color {
+        switch status {
+        case .drafting: return .orange
+        case .readyToUpload: return .blue
+        case .uploaded: return .green
+        }
+    }
 }

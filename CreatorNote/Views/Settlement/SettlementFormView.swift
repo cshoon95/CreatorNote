@@ -1,12 +1,10 @@
 import SwiftUI
-import SwiftData
 
 struct SettlementFormView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    var editingSettlement: Settlement?
+    var editingSettlement: SettlementDTO?
 
     @State private var brandName = ""
     @State private var amount: Double = 0
@@ -107,25 +105,27 @@ struct SettlementFormView: View {
     }
 
     private func save() {
-        if let s = editingSettlement {
-            s.brandName = brandName
-            s.amount = amount
-            s.fee = fee
-            s.tax = tax
-            s.settlementDate = hasSettlementDate ? settlementDate : nil
-            s.isPaid = isPaid
-            s.memo = memo
+        if var updated = editingSettlement {
+            updated.brandName = brandName
+            updated.amount = amount
+            updated.fee = fee
+            updated.tax = tax
+            updated.settlementDate = hasSettlementDate ? settlementDate : nil
+            updated.isPaid = isPaid
+            updated.memo = memo
+            Task { await DataManager.shared.updateSettlement(updated) }
         } else {
-            let s = Settlement(
-                brandName: brandName,
-                amount: amount,
-                fee: fee,
-                tax: tax,
-                settlementDate: hasSettlementDate ? settlementDate : nil,
-                isPaid: isPaid,
-                memo: memo
-            )
-            modelContext.insert(s)
+            Task {
+                await DataManager.shared.createSettlement(
+                    brandName: brandName,
+                    amount: amount,
+                    fee: fee,
+                    tax: tax,
+                    settlementDate: hasSettlementDate ? settlementDate : nil,
+                    isPaid: isPaid,
+                    memo: memo
+                )
+            }
         }
         dismiss()
     }

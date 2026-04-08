@@ -1,20 +1,22 @@
 import SwiftUI
-import SwiftData
 
 struct GeneralNoteListView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \GeneralNote.updatedAt, order: .reverse) private var notes: [GeneralNote]
     @State private var showingEditor = false
-    @State private var selectedNote: GeneralNote?
+    @State private var selectedNote: GeneralNoteDTO?
     @State private var searchText = ""
 
-    private var filtered: [GeneralNote] {
-        if searchText.isEmpty { return notes }
-        return notes.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText) ||
-            $0.plainContent.localizedCaseInsensitiveContains(searchText)
+    private var notes: [GeneralNoteDTO] { DataManager.shared.generalNotes }
+
+    private var filtered: [GeneralNoteDTO] {
+        var result = notes
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) ||
+                $0.plainContent.localizedCaseInsensitiveContains(searchText)
+            }
         }
+        return result.sorted { ($0.isPinned ? 0 : 1) < ($1.isPinned ? 0 : 1) }
     }
 
     var body: some View {
@@ -43,9 +45,16 @@ struct GeneralNoteListView: View {
                             showingEditor = true
                         } label: {
                             VStack(alignment: .leading, spacing: 6) {
-                                Text(note.title.isEmpty ? "제목 없음" : note.title)
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(theme.textPrimary)
+                                HStack {
+                                    if note.isPinned {
+                                        Image(systemName: "pin.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(theme.primary)
+                                    }
+                                    Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(theme.textPrimary)
+                                }
                                 if !note.plainContent.isEmpty {
                                     Text(note.plainContent.prefix(60))
                                         .font(.caption)
@@ -59,6 +68,14 @@ struct GeneralNoteListView: View {
                             .padding(.vertical, 4)
                         }
                         .listRowBackground(theme.cardBackground)
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                Task { await togglePin(note) }
+                            } label: {
+                                Label(note.isPinned ? "고정 해제" : "고정", systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill")
+                            }
+                            .tint(theme.primary)
+                        }
                     }
                     .onDelete(perform: delete)
                 }
@@ -87,14 +104,21 @@ struct GeneralNoteListView: View {
             if let selectedNote {
                 NoteEditorView(generalNote: selectedNote)
             } else {
-                NoteEditorView(generalNote: nil as GeneralNote?)
+                NoteEditorView(generalNote: nil as GeneralNoteDTO?)
             }
         }
     }
 
+    private func togglePin(_ note: GeneralNoteDTO) async {
+        var updated = note
+        updated.isPinned.toggle()
+        await DataManager.shared.updateGeneralNote(updated)
+    }
+
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filtered[index])
+            let item = filtered[index]
+            Task { await DataManager.shared.deleteGeneralNote(id: item.id) }
         }
     }
 }

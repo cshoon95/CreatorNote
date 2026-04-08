@@ -40,5 +40,16 @@
 	<array>
 		<string>armv7</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>creatornote</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.soohoon.CreatorNote</string>
+		</dict>
+	</array>
 </dict>
 </plist>

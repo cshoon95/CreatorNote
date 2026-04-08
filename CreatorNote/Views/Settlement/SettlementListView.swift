@@ -1,14 +1,13 @@
 import SwiftUI
-import SwiftData
 
 struct SettlementListView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Settlement.createdAt, order: .reverse) private var settlements: [Settlement]
     @State private var showingAddSheet = false
     @State private var filterPaid: Bool? = nil
 
-    private var filtered: [Settlement] {
+    private var settlements: [SettlementDTO] { DataManager.shared.settlements }
+
+    private var filtered: [SettlementDTO] {
         guard let filterPaid else { return settlements }
         return settlements.filter { $0.isPaid == filterPaid }
     }
@@ -33,7 +32,6 @@ struct SettlementListView: View {
                     }
                     .padding(.horizontal)
 
-                    // Filter
                     Picker("필터", selection: $filterPaid) {
                         Text("전체").tag(Optional<Bool>.none)
                         Text("지급 완료").tag(Optional<Bool>.some(true))
@@ -69,8 +67,7 @@ struct SettlementListView: View {
                 }
             }
             .background(theme.background)
-            .navigationTitle("정산")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showingAddSheet = true }) {
@@ -81,6 +78,9 @@ struct SettlementListView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 SettlementFormView()
+            }
+            .refreshable {
+                await DataManager.shared.fetchSettlements()
             }
         }
     }
@@ -102,7 +102,7 @@ struct SettlementListView: View {
     }
 
     @ViewBuilder
-    private func settlementRow(_ item: Settlement, theme: AppTheme) -> some View {
+    private func settlementRow(_ item: SettlementDTO, theme: AppTheme) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.brandName)
@@ -136,8 +136,8 @@ struct SettlementListView: View {
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filtered[index])
+            let item = filtered[index]
+            Task { await DataManager.shared.deleteSettlement(id: item.id) }
         }
     }
-
 }

@@ -1,56 +1,50 @@
 import SwiftUI
-import SwiftData
 
 @main
 struct CreatorNoteApp: App {
     @State private var themeManager = ThemeManager.shared
 
-    init() {
-        configureNavBarAppearance()
-    }
-
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environment(themeManager)
         }
-        .modelContainer(for: [
-            Sponsorship.self,
-            Settlement.self,
-            ReelsNote.self,
-            GeneralNote.self
-        ])
-    }
-
-    private func configureNavBarAppearance() {
-        let large = UINavigationBarAppearance()
-        large.configureWithTransparentBackground()
-        large.largeTitleTextAttributes = [
-            .font: UIFont.systemFont(ofSize: 32, weight: .bold).rounded(),
-            .foregroundColor: UIColor.label
-        ]
-        large.titleTextAttributes = [
-            .font: UIFont.systemFont(ofSize: 17, weight: .semibold).rounded(),
-            .foregroundColor: UIColor.label
-        ]
-
-        let inline = UINavigationBarAppearance()
-        inline.configureWithDefaultBackground()
-        inline.titleTextAttributes = [
-            .font: UIFont.systemFont(ofSize: 17, weight: .semibold).rounded(),
-            .foregroundColor: UIColor.label
-        ]
-
-        UINavigationBar.appearance().standardAppearance = inline
-        UINavigationBar.appearance().scrollEdgeAppearance = large
-        UINavigationBar.appearance().compactAppearance = inline
-        UINavigationBar.appearance().prefersLargeTitles = true
     }
 }
 
-extension UIFont {
-    func rounded() -> UIFont {
-        guard let descriptor = fontDescriptor.withDesign(.rounded) else { return self }
-        return UIFont(descriptor: descriptor, size: pointSize)
+struct RootView: View {
+    @Environment(ThemeManager.self) private var themeManager
+    @State private var authChecked = false
+    @State private var showWorkspaceSetup = false
+
+    var body: some View {
+        Group {
+            if !authChecked {
+                // Splash / Loading
+                ZStack {
+                    themeManager.theme.background.ignoresSafeArea()
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                            .tint(themeManager.theme.primary)
+                        Text("Creator Note")
+                            .font(.system(.title2, design: .rounded).bold())
+                            .foregroundStyle(themeManager.theme.textPrimary)
+                    }
+                }
+            } else if !AuthManager.shared.isAuthenticated {
+                LoginView()
+            } else if !WorkspaceManager.shared.hasWorkspace {
+                WorkspaceSetupView {
+                    showWorkspaceSetup = false
+                }
+            } else {
+                ContentView()
+            }
+        }
+        .task {
+            await AuthManager.shared.checkSession()
+            authChecked = true
+        }
     }
 }

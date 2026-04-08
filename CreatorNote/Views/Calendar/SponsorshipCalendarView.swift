@@ -1,13 +1,11 @@
 import SwiftUI
-import SwiftData
 
 struct SponsorshipCalendarView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Sponsorship.endDate) private var sponsorships: [Sponsorship]
     @State private var selectedDate = Date()
     @State private var currentMonth = Date()
 
+    private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
     private var calendar: Calendar { Calendar.current }
 
     private var daysInMonth: [Date] {
@@ -20,7 +18,7 @@ struct SponsorshipCalendarView: View {
 
     private var firstWeekday: Int {
         let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
-        return (calendar.component(.weekday, from: firstDay) + 5) % 7 // Monday start
+        return (calendar.component(.weekday, from: firstDay) + 5) % 7
     }
 
     private var monthTitle: String {
@@ -29,7 +27,7 @@ struct SponsorshipCalendarView: View {
         return formatter.string(from: currentMonth)
     }
 
-    private func sponsorshipsFor(date: Date) -> [Sponsorship] {
+    private func sponsorshipsFor(date: Date) -> [SponsorshipDTO] {
         sponsorships.filter { s in
             let start = calendar.startOfDay(for: s.startDate)
             let end = calendar.startOfDay(for: s.endDate)
@@ -38,7 +36,7 @@ struct SponsorshipCalendarView: View {
         }
     }
 
-    private func isEndDate(_ date: Date, for sponsorship: Sponsorship) -> Bool {
+    private func isEndDate(_ date: Date, for sponsorship: SponsorshipDTO) -> Bool {
         calendar.isDate(date, inSameDayAs: sponsorship.endDate)
     }
 
@@ -51,40 +49,71 @@ struct SponsorshipCalendarView: View {
                     HStack {
                         Button(action: { changeMonth(-1) }) {
                             Image(systemName: "chevron.left")
+                                .font(.body.bold())
                                 .foregroundStyle(theme.primary)
+                                .frame(width: 36, height: 36)
+                                .background(theme.surfaceBackground)
+                                .clipShape(Circle())
                         }
                         Spacer()
-                        Text(monthTitle)
-                            .font(.title3.bold())
-                            .foregroundStyle(theme.textPrimary)
+                        VStack(spacing: 2) {
+                            Text(monthTitle)
+                                .font(.title3.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            Text("협찬 \(sponsorships.filter { !$0.isExpired }.count)건 진행중")
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
                         Spacer()
                         Button(action: { changeMonth(1) }) {
                             Image(systemName: "chevron.right")
+                                .font(.body.bold())
                                 .foregroundStyle(theme.primary)
+                                .frame(width: 36, height: 36)
+                                .background(theme.surfaceBackground)
+                                .clipShape(Circle())
                         }
                     }
                     .padding(.horizontal)
+
+                    // Today button
+                    if !calendar.isDate(currentMonth, equalTo: Date(), toGranularity: .month) {
+                        Button {
+                            withAnimation {
+                                currentMonth = Date()
+                                selectedDate = Date()
+                            }
+                        } label: {
+                            Text("오늘")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 6)
+                                .background(theme.primary.opacity(0.1))
+                                .foregroundStyle(theme.primary)
+                                .clipShape(Capsule())
+                        }
+                    }
 
                     // Weekday headers
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
                         ForEach(["월", "화", "수", "목", "금", "토", "일"], id: \.self) { day in
                             Text(day)
                                 .font(.caption.bold())
-                                .foregroundStyle(theme.textSecondary)
+                                .foregroundStyle(day == "토" || day == "일" ? theme.accent : theme.textSecondary)
                         }
 
-                        // Empty cells for alignment
                         ForEach(0..<firstWeekday, id: \.self) { _ in
                             Text("")
                         }
 
-                        // Days
                         ForEach(daysInMonth, id: \.self) { date in
                             let sponsors = sponsorshipsFor(date: date)
                             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
                             let isToday = calendar.isDateInToday(date)
 
-                            Button(action: { selectedDate = date }) {
+                            Button(action: {
+                                withAnimation(.spring(duration: 0.2)) { selectedDate = date }
+                            }) {
                                 VStack(spacing: 2) {
                                     Text("\(calendar.component(.day, from: date))")
                                         .font(.subheadline)
@@ -122,17 +151,26 @@ struct SponsorshipCalendarView: View {
 
                     // Selected date details
                     let selectedSponsors = sponsorshipsFor(date: selectedDate)
-                    if !selectedSponsors.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(selectedDate, format: .dateTime.month().day().weekday(.wide))
-                                .font(.headline)
-                                .foregroundStyle(theme.textPrimary)
-                                .padding(.horizontal)
 
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(selectedDate, format: .dateTime.month().day().weekday(.wide))
+                            .font(.headline)
+                            .foregroundStyle(theme.textPrimary)
+                            .padding(.horizontal)
+
+                        if !selectedSponsors.isEmpty {
                             ForEach(selectedSponsors) { s in
                                 ThemedCard {
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 4) {
+                                        Circle()
+                                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                                            .frame(width: 32, height: 32)
+                                            .overlay {
+                                                Text(String(s.brandName.prefix(1)))
+                                                    .font(.caption.bold())
+                                                    .foregroundStyle(.white)
+                                            }
+                                        VStack(alignment: .leading, spacing: 2) {
                                             Text(s.brandName)
                                                 .font(.subheadline.bold())
                                                 .foregroundStyle(theme.textPrimary)
@@ -158,24 +196,30 @@ struct SponsorshipCalendarView: View {
                                 }
                                 .padding(.horizontal)
                             }
+                        } else {
+                            HStack {
+                                Spacer()
+                                Text("이 날에 예정된 협찬이 없습니다")
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.textSecondary)
+                                Spacer()
+                            }
+                            .padding(.vertical, 20)
                         }
-                    } else {
-                        Text("이 날에 예정된 협찬이 없습니다")
-                            .font(.subheadline)
-                            .foregroundStyle(theme.textSecondary)
-                            .padding(.top, 20)
                     }
                 }
                 .padding(.vertical)
             }
             .background(theme.background)
-            .navigationTitle("캘린더")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable {
+                await DataManager.shared.fetchSponsorships()
+            }
         }
     }
 
     private func changeMonth(_ offset: Int) {
-        withAnimation {
+        withAnimation(.spring(duration: 0.3)) {
             currentMonth = calendar.date(byAdding: .month, value: offset, to: currentMonth) ?? currentMonth
         }
     }

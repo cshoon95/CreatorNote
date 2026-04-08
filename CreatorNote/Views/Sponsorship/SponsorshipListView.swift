@@ -1,18 +1,17 @@
 import SwiftUI
-import SwiftData
 
 struct SponsorshipListView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Sponsorship.endDate) private var sponsorships: [Sponsorship]
     @State private var showingAddSheet = false
     @State private var searchText = ""
     @State private var filterStatus: SponsorshipStatus? = nil
 
-    private var filtered: [Sponsorship] {
+    private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
+
+    private var filtered: [SponsorshipDTO] {
         var result = sponsorships
         if let filterStatus {
-            result = result.filter { $0.status == filterStatus }
+            result = result.filter { $0.sponsorshipStatus == filterStatus }
         }
         if !searchText.isEmpty {
             result = result.filter {
@@ -28,7 +27,6 @@ struct SponsorshipListView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if !sponsorships.isEmpty {
-                    // Status filter
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             filterChip(label: "전체", isSelected: filterStatus == nil, theme: theme) {
@@ -63,8 +61,7 @@ struct SponsorshipListView: View {
                     .searchable(text: $searchText, prompt: "브랜드 검색")
                 }
             }
-            .navigationTitle("협찬 관리")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showingAddSheet = true }) {
@@ -76,11 +73,14 @@ struct SponsorshipListView: View {
             .sheet(isPresented: $showingAddSheet) {
                 SponsorshipFormView()
             }
+            .refreshable {
+                await DataManager.shared.fetchSponsorships()
+            }
         }
     }
 
     @ViewBuilder
-    private func sponsorshipRow(_ item: Sponsorship, theme: AppTheme) -> some View {
+    private func sponsorshipRow(_ item: SponsorshipDTO, theme: AppTheme) -> some View {
         HStack(spacing: 12) {
             Circle()
                 .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
@@ -103,7 +103,7 @@ struct SponsorshipListView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                SponsorshipStatusBadge(status: item.status)
+                SponsorshipStatusBadge(status: item.sponsorshipStatus)
                 if item.isExpired {
                     Text("만료됨")
                         .font(.caption2.bold())
@@ -153,7 +153,8 @@ struct SponsorshipListView: View {
 
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filtered[index])
+            let item = filtered[index]
+            Task { await DataManager.shared.deleteSponsorship(id: item.id) }
         }
     }
 }

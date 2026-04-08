@@ -1,14 +1,12 @@
 import SwiftUI
-import SwiftData
 
 enum NoteEditorMode {
-    case reels(ReelsNote?)
-    case general(GeneralNote?)
+    case reels(ReelsNoteDTO?)
+    case general(GeneralNoteDTO?)
 }
 
 struct NoteEditorView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
     let mode: NoteEditorMode
@@ -22,11 +20,11 @@ struct NoteEditorView: View {
     @State private var isSaving = false
     @State private var editorCoordinator = RichTextCoordinator()
 
-    init(reelsNote: ReelsNote? = nil) {
+    init(reelsNote: ReelsNoteDTO? = nil) {
         self.mode = .reels(reelsNote)
     }
 
-    init(generalNote: GeneralNote? = nil) {
+    init(generalNote: GeneralNoteDTO? = nil) {
         self.mode = .general(generalNote)
     }
 
@@ -159,7 +157,7 @@ struct NoteEditorView: View {
             guard let note else { return }
             title = note.title
             plainContent = note.plainContent
-            status = note.status
+            status = note.reelsNoteStatus
             tags = note.tags
             loadAttributedContent(from: note.attributedContent)
         case .general(let note):
@@ -187,28 +185,47 @@ struct NoteEditorView: View {
 
         switch mode {
         case .reels(let existing):
-            if let note = existing {
-                note.title = title
-                note.plainContent = plainContent
-                note.attributedContent = rtfData
-                note.status = status
-                note.tags = tags
-                note.updatedAt = .now
+            if var updated = existing {
+                updated.title = title
+                updated.plainContent = plainContent
+                updated.attributedContent = rtfData
+                updated.status = status.rawValue
+                updated.tags = tags
+                updated.updatedAt = .now
+                Task { await DataManager.shared.updateReelsNote(updated) }
             } else {
-                let note = ReelsNote(title: title, plainContent: plainContent, status: status, tags: tags)
-                note.attributedContent = rtfData
-                modelContext.insert(note)
+                Task {
+                    if let created = await DataManager.shared.createReelsNote(
+                        title: title,
+                        plainContent: plainContent,
+                        status: status,
+                        tags: tags
+                    ) {
+                        // attributedContent is stored separately if needed
+                        var note = created
+                        note.attributedContent = rtfData
+                        await DataManager.shared.updateReelsNote(note)
+                    }
+                }
             }
         case .general(let existing):
-            if let note = existing {
-                note.title = title
-                note.plainContent = plainContent
-                note.attributedContent = rtfData
-                note.updatedAt = .now
+            if var updated = existing {
+                updated.title = title
+                updated.plainContent = plainContent
+                updated.attributedContent = rtfData
+                updated.updatedAt = .now
+                Task { await DataManager.shared.updateGeneralNote(updated) }
             } else {
-                let note = GeneralNote(title: title, plainContent: plainContent)
-                note.attributedContent = rtfData
-                modelContext.insert(note)
+                Task {
+                    if let created = await DataManager.shared.createGeneralNote(
+                        title: title,
+                        plainContent: plainContent
+                    ) {
+                        var note = created
+                        note.attributedContent = rtfData
+                        await DataManager.shared.updateGeneralNote(note)
+                    }
+                }
             }
         }
         dismiss()

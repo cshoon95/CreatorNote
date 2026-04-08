@@ -1,10 +1,10 @@
 import SwiftUI
-import SwiftData
 
 struct SettlementDetailView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Bindable var settlement: Settlement
+    let settlement: SettlementDTO
     @State private var isEditing = false
+    @State private var isPaidLocal: Bool = false
 
     var body: some View {
         let theme = themeManager.theme
@@ -19,15 +19,15 @@ struct SettlementDetailView: View {
                             Spacer()
                             HStack(spacing: 4) {
                                 Circle()
-                                    .fill(settlement.isPaid ? Color.green : Color.orange)
+                                    .fill(isPaidLocal ? Color.green : Color.orange)
                                     .frame(width: 8, height: 8)
-                                Text(settlement.isPaid ? "지급 완료" : "대기중")
+                                Text(isPaidLocal ? "지급 완료" : "대기중")
                                     .font(.caption.bold())
-                                    .foregroundStyle(settlement.isPaid ? .green : .orange)
+                                    .foregroundStyle(isPaidLocal ? .green : .orange)
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background((settlement.isPaid ? Color.green : Color.orange).opacity(0.1))
+                            .background((isPaidLocal ? Color.green : Color.orange).opacity(0.1))
                             .clipShape(Capsule())
                         }
 
@@ -54,11 +54,16 @@ struct SettlementDetailView: View {
                         }
 
                         // Toggle payment
-                        Toggle(isOn: $settlement.isPaid) {
+                        Toggle(isOn: $isPaidLocal) {
                             Text("지급 완료")
                                 .foregroundStyle(theme.textPrimary)
                         }
                         .tint(theme.primary)
+                        .onChange(of: isPaidLocal) { _, newValue in
+                            var updated = settlement
+                            updated.isPaid = newValue
+                            Task { await DataManager.shared.updateSettlement(updated) }
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -90,6 +95,9 @@ struct SettlementDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             SettlementFormView(editingSettlement: settlement)
+        }
+        .onAppear {
+            isPaidLocal = settlement.isPaid
         }
     }
 

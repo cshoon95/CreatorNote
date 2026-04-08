@@ -48,5 +48,22 @@ struct ContentView: View {
             }
         }
         .tint(theme.primary)
+        .overlay(alignment: .top) {
+            if let msg = DataManager.shared.errorMessage {
+                Text(msg)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.red.gradient, in: Capsule())
+                    .shadow(color: .red.opacity(0.3), radius: 8, y: 4)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.spring(duration: 0.4), value: DataManager.shared.errorMessage)
+        .task {
+            await DataManager.shared.fetchAll()
+        }
     }
 }

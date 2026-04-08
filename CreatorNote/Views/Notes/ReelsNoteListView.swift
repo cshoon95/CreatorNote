@@ -1,17 +1,26 @@
 import SwiftUI
-import SwiftData
 
 struct ReelsNoteListView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
-    @Query(sort: \ReelsNote.updatedAt, order: .reverse) private var notes: [ReelsNote]
     @State private var filterStatus: ReelsNoteStatus? = nil
     @State private var showingEditor = false
-    @State private var selectedNote: ReelsNote?
+    @State private var selectedNote: ReelsNoteDTO?
+    @State private var searchText = ""
 
-    private var filtered: [ReelsNote] {
-        guard let filterStatus else { return notes }
-        return notes.filter { $0.status == filterStatus }
+    private var notes: [ReelsNoteDTO] { DataManager.shared.reelsNotes }
+
+    private var filtered: [ReelsNoteDTO] {
+        var result = notes
+        if let filterStatus {
+            result = result.filter { $0.reelsNoteStatus == filterStatus }
+        }
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) ||
+                $0.plainContent.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        return result.sorted { ($0.isPinned ? 0 : 1) < ($1.isPinned ? 0 : 1) }
     }
 
     var body: some View {
@@ -20,11 +29,11 @@ struct ReelsNoteListView: View {
             // Status filter
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    filterChip(label: "전체", isSelected: filterStatus == nil, theme: theme) {
+                    filterChip(label: "전체", count: notes.count, isSelected: filterStatus == nil, theme: theme) {
                         filterStatus = nil
                     }
                     ForEach(ReelsNoteStatus.allCases, id: \.self) { status in
-                        filterChip(label: status.rawValue, isSelected: filterStatus == status, theme: theme) {
+                        filterChip(label: status.rawValue, count: notes.filter { $0.reelsNoteStatus == status }.count, isSelected: filterStatus == status, theme: theme) {
                             filterStatus = status
                         }
                     }
@@ -56,10 +65,19 @@ struct ReelsNoteListView: View {
                             noteRow(note, theme: theme)
                         }
                         .listRowBackground(theme.cardBackground)
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                Task { await togglePin(note) }
+                            } label: {
+                                Label(note.isPinned ? "고정 해제" : "고정", systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill")
+                            }
+                            .tint(theme.primary)
+                        }
                     }
                     .onDelete(perform: delete)
                 }
                 .scrollContentBackground(.hidden)
+                .searchable(text: $searchText, prompt: "릴스 노트 검색")
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -85,35 +103,52 @@ struct ReelsNoteListView: View {
     }
 
     @ViewBuilder
-    private func filterChip(label: String, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
+    private func filterChip(label: String, count: Int, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
         Button(action: {
             Haptic.selection()
             action()
         }) {
-            Text(label)
-                .font(.caption.bold())
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(isSelected ? theme.primary : theme.surfaceBackground)
-                .foregroundStyle(isSelected ? .white : theme.textSecondary)
-                .clipShape(Capsule())
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.caption.bold())
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(isSelected ? .white.opacity(0.3) : theme.primary.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+            .background(isSelected ? theme.primary : theme.surfaceBackground)
+            .foregroundStyle(isSelected ? .white : theme.textSecondary)
+            .clipShape(Capsule())
         }
     }
 
     @ViewBuilder
-    private func noteRow(_ note: ReelsNote, theme: AppTheme) -> some View {
+    private func noteRow(_ note: ReelsNoteDTO, theme: AppTheme) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
+                if note.isPinned {
+                    Image(systemName: "pin.fill")
+                        .font(.caption2)
+                        .foregroundStyle(theme.primary)
+                }
                 Text(note.title.isEmpty ? "제목 없음" : note.title)
                     .font(.subheadline.bold())
                     .foregroundStyle(theme.textPrimary)
                 Spacer()
-                StatusBadge(status: note.status)
+                StatusBadge(status: note.reelsNoteStatus)
             }
-            Text(note.plainContent.prefix(80))
-                .font(.caption)
-                .foregroundStyle(theme.textSecondary)
-                .lineLimit(2)
+            if !note.plainContent.isEmpty {
+                Text(note.plainContent.prefix(80))
+                    .font(.caption)
+                    .foregroundStyle(theme.textSecondary)
+                    .lineLimit(2)
+            }
             HStack {
                 Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
                     .font(.caption2)
@@ -130,9 +165,16 @@ struct ReelsNoteListView: View {
         .padding(.vertical, 4)
     }
 
+    private func togglePin(_ note: ReelsNoteDTO) async {
+        var updated = note
+        updated.isPinned.toggle()
+        await DataManager.shared.updateReelsNote(updated)
+    }
+
     private func delete(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filtered[index])
+            let item = filtered[index]
+            Task { await DataManager.shared.deleteReelsNote(id: item.id) }
         }
     }
 }

@@ -1,10 +1,10 @@
 import SwiftUI
-import SwiftData
 
 struct SponsorshipDetailView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Bindable var sponsorship: Sponsorship
+    let sponsorship: SponsorshipDTO
     @State private var isEditing = false
+    @State private var currentStatus: SponsorshipStatus = .preSubmit
 
     var body: some View {
         let theme = themeManager.theme
@@ -31,7 +31,7 @@ struct SponsorshipDetailView: View {
                                     .foregroundStyle(theme.textSecondary)
                             }
                             Spacer()
-                            SponsorshipStatusBadge(status: sponsorship.status)
+                            SponsorshipStatusBadge(status: currentStatus)
                         }
 
                         Divider()
@@ -75,11 +75,14 @@ struct SponsorshipDetailView: View {
                                     ForEach(SponsorshipStatus.allCases, id: \.self) { s in
                                         Button {
                                             Haptic.selection()
-                                            withAnimation { sponsorship.status = s }
+                                            withAnimation { currentStatus = s }
+                                            var updated = sponsorship
+                                            updated.status = s.rawValue
+                                            Task { await DataManager.shared.updateSponsorship(updated) }
                                         } label: {
                                             SponsorshipStatusBadge(status: s)
-                                                .opacity(sponsorship.status == s ? 1 : 0.5)
-                                                .scaleEffect(sponsorship.status == s ? 1.05 : 1)
+                                                .opacity(currentStatus == s ? 1 : 0.5)
+                                                .scaleEffect(currentStatus == s ? 1.05 : 1)
                                         }
                                     }
                                 }
@@ -118,6 +121,9 @@ struct SponsorshipDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             SponsorshipFormView(editingSponsorship: sponsorship)
+        }
+        .onAppear {
+            currentStatus = sponsorship.sponsorshipStatus
         }
     }
 

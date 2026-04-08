@@ -1,12 +1,10 @@
 import SwiftUI
-import SwiftData
 
 struct SponsorshipFormView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
-    var editingSponsorship: Sponsorship?
+    var editingSponsorship: SponsorshipDTO?
 
     @State private var brandName = ""
     @State private var productName = ""
@@ -87,30 +85,32 @@ struct SponsorshipFormView: View {
         amount = s.amount
         startDate = s.startDate
         endDate = s.endDate
-        status = s.status
+        status = s.sponsorshipStatus
     }
 
     private func save() {
-        if let s = editingSponsorship {
-            s.brandName = brandName
-            s.productName = productName
-            s.details = details
-            s.amount = amount
-            s.startDate = startDate
-            s.endDate = endDate
-            s.status = status
-            s.updatedAt = .now
+        if var updated = editingSponsorship {
+            updated.brandName = brandName
+            updated.productName = productName
+            updated.details = details
+            updated.amount = amount
+            updated.startDate = startDate
+            updated.endDate = endDate
+            updated.status = status.rawValue
+            updated.updatedAt = .now
+            Task { await DataManager.shared.updateSponsorship(updated) }
         } else {
-            let s = Sponsorship(
-                brandName: brandName,
-                productName: productName,
-                details: details,
-                amount: amount,
-                startDate: startDate,
-                endDate: endDate,
-                status: status
-            )
-            modelContext.insert(s)
+            Task {
+                await DataManager.shared.createSponsorship(
+                    brandName: brandName,
+                    productName: productName,
+                    details: details,
+                    amount: amount,
+                    startDate: startDate,
+                    endDate: endDate,
+                    status: status
+                )
+            }
         }
         dismiss()
     }
