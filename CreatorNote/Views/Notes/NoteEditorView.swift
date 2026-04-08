@@ -20,6 +20,7 @@ struct NoteEditorView: View {
     @State private var tagInput = ""
     @State private var tags: [String] = []
     @State private var isSaving = false
+    @State private var editorCoordinator = RichTextCoordinator()
 
     init(reelsNote: ReelsNote? = nil) {
         self.mode = .reels(reelsNote)
@@ -55,8 +56,14 @@ struct NoteEditorView: View {
                 RichTextEditor(
                     attributedText: $attributedContent,
                     plainText: $plainContent,
-                    accentColor: UIColor(theme.primary)
+                    accentColor: UIColor(theme.primary),
+                    coordinator: editorCoordinator
                 )
+
+                Divider()
+
+                FormattingToolbar(coordinator: editorCoordinator)
+                    .safeAreaPadding(.bottom)
             }
             .background(theme.background)
             .navigationTitle(isReelsMode ? "릴스 노트" : "메모")
