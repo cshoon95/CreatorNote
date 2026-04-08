@@ -1,6 +1,34 @@
 import Foundation
 import SwiftData
 
+enum SponsorshipStatus: String, Codable, CaseIterable {
+    case preSubmit = "제출 전"
+    case underReview = "검수중"
+    case submitted = "제출 완료"
+    case pendingSettlement = "정산 대기"
+    case completed = "완료"
+
+    var icon: String {
+        switch self {
+        case .preSubmit: return "doc.badge.clock"
+        case .underReview: return "eye.circle.fill"
+        case .submitted: return "checkmark.circle.fill"
+        case .pendingSettlement: return "wonsign.circle.fill"
+        case .completed: return "star.circle.fill"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .preSubmit: return "gray"
+        case .underReview: return "orange"
+        case .submitted: return "blue"
+        case .pendingSettlement: return "purple"
+        case .completed: return "green"
+        }
+    }
+}
+
 @Model
 final class Sponsorship {
     var id: UUID
@@ -10,7 +38,7 @@ final class Sponsorship {
     var amount: Double
     var startDate: Date
     var endDate: Date
-    var isSettled: Bool
+    var status: SponsorshipStatus
     var createdAt: Date
     var updatedAt: Date
 
@@ -21,7 +49,7 @@ final class Sponsorship {
         amount: Double = 0,
         startDate: Date = .now,
         endDate: Date = .now.addingTimeInterval(86400 * 30),
-        isSettled: Bool = false
+        status: SponsorshipStatus = .preSubmit
     ) {
         self.id = UUID()
         self.brandName = brandName
@@ -30,7 +58,7 @@ final class Sponsorship {
         self.amount = amount
         self.startDate = startDate
         self.endDate = endDate
-        self.isSettled = isSettled
+        self.status = status
         self.createdAt = .now
         self.updatedAt = .now
     }

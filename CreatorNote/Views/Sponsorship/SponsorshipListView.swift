@@ -7,20 +7,46 @@ struct SponsorshipListView: View {
     @Query(sort: \Sponsorship.endDate) private var sponsorships: [Sponsorship]
     @State private var showingAddSheet = false
     @State private var searchText = ""
+    @State private var filterStatus: SponsorshipStatus? = nil
 
     private var filtered: [Sponsorship] {
-        if searchText.isEmpty { return sponsorships }
-        return sponsorships.filter {
-            $0.brandName.localizedCaseInsensitiveContains(searchText) ||
-            $0.productName.localizedCaseInsensitiveContains(searchText)
+        var result = sponsorships
+        if let filterStatus {
+            result = result.filter { $0.status == filterStatus }
         }
+        if !searchText.isEmpty {
+            result = result.filter {
+                $0.brandName.localizedCaseInsensitiveContains(searchText) ||
+                $0.productName.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        return result
     }
 
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
-            Group {
-                if sponsorships.isEmpty {
+            VStack(spacing: 0) {
+                if !sponsorships.isEmpty {
+                    // Status filter
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            filterChip(label: "전체", isSelected: filterStatus == nil, theme: theme) {
+                                filterStatus = nil
+                            }
+                            ForEach(SponsorshipStatus.allCases, id: \.self) { s in
+                                filterChip(label: s.rawValue, isSelected: filterStatus == s, theme: theme) {
+                                    filterStatus = s
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
+                    }
+                    .background(theme.surfaceBackground)
+                }
+
+                if filtered.isEmpty {
                     emptyState(theme: theme)
                 } else {
                     List {
@@ -76,23 +102,15 @@ struct SponsorshipListView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
+                SponsorshipStatusBadge(status: item.status)
                 if item.isExpired {
                     Text("만료됨")
-                        .font(.caption.bold())
+                        .font(.caption2.bold())
                         .foregroundStyle(.red)
-                } else if item.isExpiringSoon {
-                    Text("D-\(item.daysRemaining)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.orange)
                 } else {
                     Text("D-\(item.daysRemaining)")
-                        .font(.caption.bold())
-                        .foregroundStyle(theme.primary)
-                }
-                if item.isSettled {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.caption)
+                        .font(.caption2.bold())
+                        .foregroundStyle(item.isExpiringSoon ? .orange : theme.primary)
                 }
             }
         }
@@ -114,6 +132,22 @@ struct SponsorshipListView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.background)
+    }
+
+    @ViewBuilder
+    private func filterChip(label: String, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
+        Button(action: {
+            Haptic.selection()
+            withAnimation { action() }
+        }) {
+            Text(label)
+                .font(.caption.bold())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isSelected ? theme.primary : theme.cardBackground)
+                .foregroundStyle(isSelected ? .white : theme.textSecondary)
+                .clipShape(Capsule())
+        }
     }
 
     private func delete(at offsets: IndexSet) {

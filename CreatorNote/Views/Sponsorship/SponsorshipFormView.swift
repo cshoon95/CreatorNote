@@ -14,6 +14,7 @@ struct SponsorshipFormView: View {
     @State private var amount: Double = 0
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(86400 * 30)
+    @State private var status: SponsorshipStatus = .preSubmit
 
     var body: some View {
         let theme = themeManager.theme
@@ -41,6 +42,16 @@ struct SponsorshipFormView: View {
                     DatePicker("종료일", selection: $endDate, displayedComponents: .date)
                 } header: {
                     Text("기간")
+                }
+
+                Section {
+                    Picker("상태", selection: $status) {
+                        ForEach(SponsorshipStatus.allCases, id: \.self) { s in
+                            Text(s.rawValue).tag(s)
+                        }
+                    }
+                } header: {
+                    Text("상태")
                 }
 
                 Section {
@@ -76,6 +87,7 @@ struct SponsorshipFormView: View {
         amount = s.amount
         startDate = s.startDate
         endDate = s.endDate
+        status = s.status
     }
 
     private func save() {
@@ -86,6 +98,7 @@ struct SponsorshipFormView: View {
             s.amount = amount
             s.startDate = startDate
             s.endDate = endDate
+            s.status = status
             s.updatedAt = .now
         } else {
             let s = Sponsorship(
@@ -94,7 +107,8 @@ struct SponsorshipFormView: View {
                 details: details,
                 amount: amount,
                 startDate: startDate,
-                endDate: endDate
+                endDate: endDate,
+                status: status
             )
             modelContext.insert(s)
         }

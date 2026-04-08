@@ -31,6 +31,7 @@ struct SponsorshipDetailView: View {
                                     .foregroundStyle(theme.textSecondary)
                             }
                             Spacer()
+                            SponsorshipStatusBadge(status: sponsorship.status)
                         }
 
                         Divider()
@@ -65,13 +66,24 @@ struct SponsorshipDetailView: View {
                                 .foregroundStyle(sponsorship.isExpired ? .red : theme.primary)
                         }
 
-                        // Settlement status
-                        HStack {
-                            Label("정산", systemImage: "checkmark.circle")
+                        // Status selector
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("상태", systemImage: "flag")
                                 .foregroundStyle(theme.textSecondary)
-                            Spacer()
-                            Toggle("", isOn: $sponsorship.isSettled)
-                                .tint(theme.primary)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 6) {
+                                    ForEach(SponsorshipStatus.allCases, id: \.self) { s in
+                                        Button {
+                                            Haptic.selection()
+                                            withAnimation { sponsorship.status = s }
+                                        } label: {
+                                            SponsorshipStatusBadge(status: s)
+                                                .opacity(sponsorship.status == s ? 1 : 0.5)
+                                                .scaleEffect(sponsorship.status == s ? 1.05 : 1)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

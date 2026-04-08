@@ -80,3 +80,32 @@ struct StatusBadge: View {
     }
 }
 
+struct SponsorshipStatusBadge: View {
+    let status: SponsorshipStatus
+
+    private var color: Color {
+        switch status {
+        case .preSubmit: return .gray
+        case .underReview: return .orange
+        case .submitted: return .blue
+        case .pendingSettlement: return .purple
+        case .completed: return .green
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: status.icon)
+                .font(.caption2)
+            Text(status.rawValue)
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.15))
+        .foregroundStyle(color)
+        .clipShape(Capsule())
+    }
+}
+
