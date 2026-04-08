@@ -23,6 +23,7 @@ struct NotesTabView: View {
             }
             .background(theme.background)
             .navigationTitle("노트")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 }

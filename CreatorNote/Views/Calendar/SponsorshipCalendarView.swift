@@ -170,6 +170,7 @@ struct SponsorshipCalendarView: View {
             }
             .background(theme.background)
             .navigationTitle("캘린더")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
 

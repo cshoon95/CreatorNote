@@ -132,6 +132,7 @@ struct DashboardView: View {
             }
             .background(theme.background)
             .navigationTitle("대시보드")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: SettingsView()) {

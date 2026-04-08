@@ -70,6 +70,7 @@ struct SettlementListView: View {
             }
             .background(theme.background)
             .navigationTitle("정산")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showingAddSheet = true }) {

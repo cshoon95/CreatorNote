@@ -64,6 +64,7 @@ struct SponsorshipListView: View {
                 }
             }
             .navigationTitle("협찬 관리")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: { showingAddSheet = true }) {
