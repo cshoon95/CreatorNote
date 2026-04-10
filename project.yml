@@ -25,6 +25,11 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+    entitlements:
+      path: CreatorNote/Resources/CreatorNote.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         INFOPLIST_FILE: CreatorNote/Resources/Info.plist
@@ -35,3 +40,4 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_STRICT_CONCURRENCY: minimal
         DEVELOPMENT_TEAM: ""
+        CODE_SIGN_ENTITLEMENTS: CreatorNote/Resources/CreatorNote.entitlements

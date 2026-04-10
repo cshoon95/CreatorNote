@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct LoginView: View {
     @Environment(ThemeManager.self) private var themeManager
@@ -36,7 +37,7 @@ struct LoginView: View {
                     }
 
                     VStack(spacing: 8) {
-                        Text("Creator Note")
+                        Text("Influe")
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundStyle(
                                 LinearGradient(
@@ -54,52 +55,69 @@ struct LoginView: View {
 
                 Spacer()
 
-                // Social Login Buttons
+                // Login Buttons
                 VStack(spacing: 14) {
-                    // 카카오 로그인
-                    socialLoginButton(
-                        provider: "kakao",
-                        title: "카카오 로그인",
-                        backgroundColor: Color(hex: "FEE500"),
-                        foregroundColor: Color(hex: "191919"),
-                        iconName: "message.fill"
-                    ) {
-                        await performLogin(provider: "kakao") {
-                            try await AuthManager.shared.signInWithKakao()
-                        }
+                    // Apple 로그인
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        Task { await handleAppleSignIn(result) }
                     }
+                    .signInWithAppleButtonStyle(
+                        themeManager.currentThemeType == .midnight ? .white : .black
+                    )
+                    .frame(height: 54)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 3)
 
-                    // 구글 로그인
-                    socialLoginButton(
-                        provider: "google",
-                        title: "구글 로그인",
-                        backgroundColor: .white,
-                        foregroundColor: Color(hex: "3C4043"),
-                        iconName: "g.circle.fill",
-                        hasBorder: true
-                    ) {
-                        await performLogin(provider: "google") {
-                            try await AuthManager.shared.signInWithGoogle()
+                    // Google 로그인
+                    Button {
+                        Task {
+                            await performLogin(provider: "google") {
+                                await AuthManager.shared.signInWithGoogle()
+                            }
                         }
-                    }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "g.circle.fill")
+                                .font(.title3)
 
-                    // 네이버 로그인
-                    socialLoginButton(
-                        provider: "naver",
-                        title: "네이버 로그인",
-                        backgroundColor: Color(hex: "03C75A"),
-                        foregroundColor: .white,
-                        iconName: "n.circle.fill"
-                    ) {
-                        await performLogin(provider: "naver") {
-                            try await AuthManager.shared.signInWithNaver()
+                            Text("Google로 계속하기")
+                                .font(.system(.body, design: .rounded))
+                                .fontWeight(.semibold)
+
+                            Spacer()
+
+                            if loadingProvider == "google" {
+                                ProgressView()
+                                    .tint(Color(hex: "3C4043"))
+                                    .scaleEffect(0.8)
+                            }
                         }
+                        .foregroundStyle(Color(hex: "3C4043"))
+                        .padding(.horizontal, 20)
+                        .frame(height: 54)
+                        .frame(maxWidth: .infinity)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                        }
+                        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
                     }
+                    .disabled(isLoading)
+                    .opacity(isLoading && loadingProvider != "google" ? 0.5 : 1.0)
                 }
                 .padding(.horizontal, 24)
 
+                Text("로그인 시 서비스 이용약관에 동의하게 됩니다.")
+                    .font(.caption2)
+                    .foregroundStyle(theme.textSecondary.opacity(0.6))
+                    .padding(.top, 16)
+
                 Spacer()
-                    .frame(height: 60)
+                    .frame(height: 50)
             }
 
             // Loading Overlay
@@ -125,64 +143,40 @@ struct LoginView: View {
         }
     }
 
-    @ViewBuilder
-    private func socialLoginButton(
-        provider: String,
-        title: String,
-        backgroundColor: Color,
-        foregroundColor: Color,
-        iconName: String,
-        hasBorder: Bool = false,
-        action: @escaping () async -> Void
-    ) -> some View {
-        Button {
-            Task { await action() }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: iconName)
-                    .font(.title3)
-
-                Text(title)
-                    .font(.system(.body, design: .rounded))
-                    .fontWeight(.semibold)
-
-                Spacer()
-
-                if loadingProvider == provider {
-                    ProgressView()
-                        .tint(foregroundColor)
-                        .scaleEffect(0.8)
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) async {
+        switch result {
+        case .success(let auth):
+            if let credential = auth.credential as? ASAuthorizationAppleIDCredential {
+                isLoading = true
+                loadingProvider = "apple"
+                defer {
+                    isLoading = false
+                    loadingProvider = nil
+                }
+                await AuthManager.shared.signInWithApple(credential: credential)
+                if let error = AuthManager.shared.errorMessage {
+                    errorMessage = error
+                    showError = true
                 }
             }
-            .foregroundStyle(foregroundColor)
-            .padding(.horizontal, 20)
-            .frame(height: 54)
-            .frame(maxWidth: .infinity)
-            .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                if hasBorder {
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                }
+        case .failure(let error):
+            if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
+                errorMessage = error.localizedDescription
+                showError = true
             }
-            .shadow(color: backgroundColor.opacity(0.3), radius: 6, x: 0, y: 3)
         }
-        .disabled(isLoading)
-        .opacity(isLoading && loadingProvider != provider ? 0.5 : 1.0)
     }
 
-    private func performLogin(provider: String, action: () async throws -> Void) async {
+    private func performLogin(provider: String, action: () async -> Void) async {
         isLoading = true
         loadingProvider = provider
         defer {
             isLoading = false
             loadingProvider = nil
         }
-        do {
-            try await action()
-        } catch {
-            errorMessage = error.localizedDescription
+        await action()
+        if let error = AuthManager.shared.errorMessage {
+            errorMessage = error
             showError = true
         }
     }

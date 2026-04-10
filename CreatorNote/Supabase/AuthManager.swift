@@ -35,6 +35,42 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Apple Sign In
+
+    func signInWithApple(credential: ASAuthorizationAppleIDCredential) async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        guard let identityToken = credential.identityToken,
+              let tokenString = String(data: identityToken, encoding: .utf8) else {
+            errorMessage = "Apple 로그인 토큰을 가져올 수 없습니다."
+            return
+        }
+
+        do {
+            let session = try await supabase.auth.signInWithIdToken(
+                credentials: .init(
+                    provider: .apple,
+                    idToken: tokenString
+                )
+            )
+            currentUser = session.user
+            isAuthenticated = true
+
+            let name = [credential.fullName?.givenName, credential.fullName?.familyName]
+                .compactMap { $0 }
+                .joined(separator: " ")
+            await fetchOrCreateProfile(
+                displayName: name.isEmpty ? nil : name,
+                provider: "apple"
+            )
+            await restoreWorkspace()
+        } catch {
+            errorMessage = "Apple 로그인에 실패했습니다: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: - Google Sign In
 
     func signInWithGoogle() async {
@@ -50,23 +86,11 @@ final class AuthManager {
             let session = try await supabase.auth.session
             currentUser = session.user
             isAuthenticated = true
-            await fetchOrCreateProfile()
+            await fetchOrCreateProfile(provider: "google")
             await restoreWorkspace()
         } catch {
             errorMessage = "Google 로그인에 실패했습니다: \(error.localizedDescription)"
         }
-    }
-
-    // MARK: - Kakao Sign In (Placeholder)
-
-    func signInWithKakao() async {
-        errorMessage = "카카오 로그인은 준비중입니다."
-    }
-
-    // MARK: - Naver Sign In (Placeholder)
-
-    func signInWithNaver() async {
-        errorMessage = "네이버 로그인은 준비중입니다."
     }
 
     // MARK: - Sign Out
@@ -105,7 +129,7 @@ final class AuthManager {
         }
     }
 
-    private func fetchOrCreateProfile() async {
+    private func fetchOrCreateProfile(displayName: String? = nil, provider: String = "google") async {
         guard let user = currentUser else { return }
 
         do {
@@ -119,11 +143,14 @@ final class AuthManager {
             if let existing = profiles.first {
                 currentProfile = existing
             } else {
+                let name = displayName
+                    ?? user.userMetadata["full_name"]?.value as? String
+                    ?? user.userMetadata["name"]?.value as? String
                 let newProfile = Profile(
                     id: user.id,
-                    displayName: user.userMetadata["full_name"]?.value as? String,
+                    displayName: name,
                     avatarUrl: user.userMetadata["avatar_url"]?.value as? String,
-                    provider: "google",
+                    provider: provider,
                     createdAt: Date()
                 )
                 try await supabase

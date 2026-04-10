@@ -183,7 +183,7 @@ struct DashboardView: View {
                     Text(greeting)
                         .font(.subheadline)
                         .foregroundStyle(.white.opacity(0.85))
-                    Text("Creator Note")
+                    Text("Influe")
                         .font(.system(.title, design: .rounded).bold())
                         .foregroundStyle(.white)
                     if activeSponsors.count > 0 {

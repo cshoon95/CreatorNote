@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import Supabase
 
 @main
 struct CreatorNoteApp: App {
@@ -8,6 +9,11 @@ struct CreatorNoteApp: App {
         WindowGroup {
             RootView()
                 .environment(themeManager)
+                .onOpenURL { url in
+                    Task {
+                        try? await SupabaseManager.shared.client.auth.handle(url)
+                    }
+                }
         }
     }
 }
@@ -20,14 +26,13 @@ struct RootView: View {
     var body: some View {
         Group {
             if !authChecked {
-                // Splash / Loading
                 ZStack {
                     themeManager.theme.background.ignoresSafeArea()
                     VStack(spacing: 16) {
                         ProgressView()
                             .scaleEffect(1.2)
                             .tint(themeManager.theme.primary)
-                        Text("Creator Note")
+                        Text("Influe")
                             .font(.system(.title2, design: .rounded).bold())
                             .foregroundStyle(themeManager.theme.textPrimary)
                     }

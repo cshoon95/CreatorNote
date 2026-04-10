@@ -154,10 +154,10 @@ struct SettingsView: View {
 
                 // App info
                 VStack(spacing: 8) {
-                    Text("Creator Note")
+                    Text("Influe")
                         .font(.headline)
                         .foregroundStyle(theme.textPrimary)
-                    Text("인플루언서를 위한 올인원 관리 앱")
+                    Text("인플루언서를 위한 스마트 관리 앱")
                         .font(.caption)
                         .foregroundStyle(theme.textSecondary)
                     Text("v1.0.0")
