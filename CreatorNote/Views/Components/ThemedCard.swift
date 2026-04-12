@@ -68,7 +68,7 @@ struct StatusBadge: View {
         HStack(spacing: 4) {
             Image(systemName: status.icon)
                 .font(.caption2)
-            Text(status.rawValue)
+            Text(status.displayName)
                 .font(.caption)
                 .fontWeight(.medium)
         }
@@ -97,7 +97,7 @@ struct SponsorshipStatusBadge: View {
         HStack(spacing: 4) {
             Image(systemName: status.icon)
                 .font(.caption2)
-            Text(status.rawValue)
+            Text(status.displayName)
                 .font(.caption)
                 .fontWeight(.medium)
         }

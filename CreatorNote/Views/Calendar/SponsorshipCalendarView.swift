@@ -4,6 +4,7 @@ struct SponsorshipCalendarView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var selectedDate = Date()
     @State private var currentMonth = Date()
+    @State private var showingAddSheet = false
 
     private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
     private var calendar: Calendar { Calendar.current }
@@ -43,6 +44,7 @@ struct SponsorshipCalendarView: View {
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
+            ZStack(alignment: .bottomTrailing) {
             ScrollView {
                 VStack(spacing: 20) {
                     // Month navigation
@@ -208,12 +210,35 @@ struct SponsorshipCalendarView: View {
                         }
                     }
                 }
-                .padding(.vertical)
+                .padding(.top)
+                .padding(.bottom, 90)
             }
             .background(theme.background)
+
+            Button { showingAddSheet = true } label: {
+                Image(systemName: "plus")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(
+                        LinearGradient(
+                            colors: theme.gradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .clipShape(Circle())
+                    .shadow(color: theme.primary.opacity(0.35), radius: 10, y: 5)
+            }
+            .padding(20)
+
+            } // ZStack
             .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await DataManager.shared.fetchSponsorships()
+            }
+            .sheet(isPresented: $showingAddSheet) {
+                SponsorshipFormView()
             }
         }
     }

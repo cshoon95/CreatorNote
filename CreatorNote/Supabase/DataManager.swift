@@ -49,22 +49,42 @@ final class DataManager {
     }
 
     func createSponsorship(brandName: String, productName: String = "", details: String = "", amount: Double = 0, startDate: Date = .now, endDate: Date = .now.addingTimeInterval(86400 * 30), status: SponsorshipStatus = .preSubmit) async {
-        guard let wid = workspaceId, let uid = userId else { return }
+        guard let wid = workspaceId, let uid = userId else {
+            showError("워크스페이스 또는 로그인 정보가 없습니다")
+            return
+        }
         do {
             let dto = SponsorshipInsert(workspaceId: wid, createdBy: uid, brandName: brandName, productName: productName, details: details, amount: amount, startDate: startDate, endDate: endDate, status: status.rawValue)
             let created: SponsorshipDTO = try await supabase.from("sponsorships").insert(dto).select().single().execute().value
-            sponsorships.append(created)
-            sponsorships.sort { $0.endDate < $1.endDate }
-        } catch { showError("협찬 추가에 실패했습니다") }
+            sponsorships.insert(created, at: 0)
+        } catch {
+            showError("협찬 추가 실패: \(error.localizedDescription)")
+        }
     }
 
     func updateSponsorship(_ item: SponsorshipDTO) async {
+        let previous = sponsorships.first { $0.id == item.id }
+        // Optimistic update
+        if let idx = sponsorships.firstIndex(where: { $0.id == item.id }) {
+            sponsorships[idx] = item
+        }
         do {
             try await supabase.from("sponsorships").update(item).eq("id", value: item.id.uuidString).execute()
-            if let idx = sponsorships.firstIndex(where: { $0.id == item.id }) {
-                sponsorships[idx] = item
+            // 정산 대기 → 완료 전환 시 정산 항목 자동 생성
+            if previous?.sponsorshipStatus == .pendingSettlement && item.sponsorshipStatus == .completed {
+                await createSettlement(
+                    brandName: item.brandName,
+                    amount: item.amount,
+                    settlementDate: Date(),
+                    isPaid: false,
+                    memo: "협찬 완료 자동 생성",
+                    sponsorshipId: item.id
+                )
             }
-        } catch { showError("협찬 수정에 실패했습니다") }
+        } catch {
+            await fetchSponsorships()
+            showError("협찬 수정에 실패했습니다")
+        }
     }
 
     func deleteSponsorship(id: UUID) async {
@@ -89,22 +109,26 @@ final class DataManager {
         } catch { showError("정산 목록을 불러올 수 없습니다") }
     }
 
-    func createSettlement(brandName: String, amount: Double = 0, fee: Double = 0, tax: Double = 0, settlementDate: Date? = nil, isPaid: Bool = false, memo: String = "") async {
+    func createSettlement(brandName: String, amount: Double = 0, fee: Double = 0, tax: Double = 0, settlementDate: Date? = nil, isPaid: Bool = false, memo: String = "", sponsorshipId: UUID? = nil) async {
         guard let wid = workspaceId, let uid = userId else { return }
         do {
-            let dto = SettlementInsert(workspaceId: wid, createdBy: uid, brandName: brandName, amount: amount, fee: fee, tax: tax, settlementDate: settlementDate, isPaid: isPaid, memo: memo)
+            let dto = SettlementInsert(workspaceId: wid, createdBy: uid, brandName: brandName, amount: amount, fee: fee, tax: tax, settlementDate: settlementDate, isPaid: isPaid, memo: memo, sponsorshipId: sponsorshipId)
             let created: SettlementDTO = try await supabase.from("settlements").insert(dto).select().single().execute().value
             settlements.insert(created, at: 0)
-        } catch { showError("정산 추가에 실패했습니다") }
+        } catch { showError("정산 추가에 실패했습니다: \(error.localizedDescription)") }
     }
 
     func updateSettlement(_ item: SettlementDTO) async {
+        // Optimistic update
+        if let idx = settlements.firstIndex(where: { $0.id == item.id }) {
+            settlements[idx] = item
+        }
         do {
             try await supabase.from("settlements").update(item).eq("id", value: item.id.uuidString).execute()
-            if let idx = settlements.firstIndex(where: { $0.id == item.id }) {
-                settlements[idx] = item
-            }
-        } catch { showError("정산 수정에 실패했습니다") }
+        } catch {
+            await fetchSettlements()
+            showError("정산 수정에 실패했습니다")
+        }
     }
 
     func deleteSettlement(id: UUID) async {
@@ -144,12 +168,16 @@ final class DataManager {
     }
 
     func updateReelsNote(_ item: ReelsNoteDTO) async {
+        // Optimistic update
+        if let idx = reelsNotes.firstIndex(where: { $0.id == item.id }) {
+            reelsNotes[idx] = item
+        }
         do {
             try await supabase.from("reels_notes").update(item).eq("id", value: item.id.uuidString).execute()
-            if let idx = reelsNotes.firstIndex(where: { $0.id == item.id }) {
-                reelsNotes[idx] = item
-            }
-        } catch { showError("릴스 노트 수정에 실패했습니다") }
+        } catch {
+            await fetchReelsNotes()
+            showError("릴스 노트 수정에 실패했습니다")
+        }
     }
 
     func deleteReelsNote(id: UUID) async {
@@ -189,12 +217,16 @@ final class DataManager {
     }
 
     func updateGeneralNote(_ item: GeneralNoteDTO) async {
+        // Optimistic update
+        if let idx = generalNotes.firstIndex(where: { $0.id == item.id }) {
+            generalNotes[idx] = item
+        }
         do {
             try await supabase.from("general_notes").update(item).eq("id", value: item.id.uuidString).execute()
-            if let idx = generalNotes.firstIndex(where: { $0.id == item.id }) {
-                generalNotes[idx] = item
-            }
-        } catch { showError("메모 수정에 실패했습니다") }
+        } catch {
+            await fetchGeneralNotes()
+            showError("메모 수정에 실패했습니다")
+        }
     }
 
     func deleteGeneralNote(id: UUID) async {
@@ -226,10 +258,12 @@ private struct SettlementInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let brandName: String
     let amount: Double; let fee: Double; let tax: Double
     let settlementDate: Date?; let isPaid: Bool; let memo: String
+    let sponsorshipId: UUID?
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
         case brandName = "brand_name"; case amount, fee, tax, memo
         case settlementDate = "settlement_date"; case isPaid = "is_paid"
+        case sponsorshipId = "sponsorship_id"
     }
 }
 

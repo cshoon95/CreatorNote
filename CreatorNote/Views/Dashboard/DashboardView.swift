@@ -4,33 +4,31 @@ struct DashboardView: View {
     @Environment(ThemeManager.self) private var themeManager
 
     private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
-    private var settlements: [SettlementDTO] { DataManager.shared.settlements }
     private var reelsNotes: [ReelsNoteDTO] { DataManager.shared.reelsNotes }
     private var generalNotes: [GeneralNoteDTO] { DataManager.shared.generalNotes }
 
     private var activeSponsors: [SponsorshipDTO] {
         sponsorships.filter { !$0.isExpired }
     }
-
     private var expiringSoon: [SponsorshipDTO] {
         sponsorships.filter { $0.isExpiringSoon }
     }
-
+    private var pendingSettlements: [SponsorshipDTO] {
+        sponsorships.filter { $0.sponsorshipStatus == .pendingSettlement }
+    }
+    private var pendingAmount: Double {
+        pendingSettlements.reduce(0) { $0 + $1.amount }
+    }
     private var totalEarnings: Double {
-        settlements.filter(\.isPaid).reduce(0) { $0 + $1.netAmount }
+        sponsorships.filter { $0.sponsorshipStatus == .completed }.reduce(0) { $0 + $1.amount }
     }
-
-    private var pendingSettlements: Int {
-        settlements.filter { !$0.isPaid }.count
-    }
-
     private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: .now)
-        switch hour {
-        case 6..<12: return "좋은 아침이에요"
-        case 12..<18: return "활기찬 오후에요"
-        case 18..<22: return "수고한 하루에요"
-        default: return "늦은 밤이에요"
+        let h = Calendar.current.component(.hour, from: .now)
+        switch h {
+        case 6..<12: return "좋은 아침이에요 ☀️"
+        case 12..<18: return "활기찬 오후에요 🌤"
+        case 18..<22: return "수고한 하루에요 🌙"
+        default: return "늦은 밤이에요 🌛"
         }
     }
 
@@ -39,123 +37,48 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    headerSection(theme: theme)
+                    headerCard(theme: theme)
 
-                    // Quick stats
-                    LazyVGrid(columns: [
-                        GridItem(.flexible()),
-                        GridItem(.flexible())
-                    ], spacing: 12) {
-                        StatCard(
-                            title: "진행중 협찬",
-                            value: "\(activeSponsors.count)",
-                            icon: "gift.fill"
-                        )
-                        StatCard(
+                    HStack(spacing: 12) {
+                        miniStatCard(
                             title: "총 수익",
-                            value: totalEarnings.krwFormatted,
-                            icon: "wonsign.circle.fill"
+                            icon: "wonsign.circle.fill",
+                            iconColor: theme.primary,
+                            primary: totalEarnings.krwFormatted,
+                            sub: "완료된 협찬",
+                            theme: theme
                         )
-                        StatCard(
-                            title: "대기중 정산",
-                            value: "\(pendingSettlements)",
-                            icon: "clock.fill"
-                        )
-                        StatCard(
+                        miniStatCard(
                             title: "전체 노트",
-                            value: "\(reelsNotes.count + generalNotes.count)",
-                            icon: "note.text"
+                            icon: "note.text",
+                            iconColor: theme.accent,
+                            primary: "\(reelsNotes.count + generalNotes.count)",
+                            sub: "릴스 \(reelsNotes.count) · 메모 \(generalNotes.count)",
+                            theme: theme
                         )
                     }
                     .padding(.horizontal)
 
-                    // Expiring soon
+                    if !pendingSettlements.isEmpty {
+                        pendingSection(theme: theme)
+                    }
+
                     if !expiringSoon.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Label {
-                                Text("마감 임박")
-                                    .font(.headline)
-                                    .foregroundStyle(theme.textPrimary)
-                            } icon: {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.orange)
-                            }
-                            .padding(.horizontal)
-
-                            ForEach(expiringSoon) { sponsor in
-                                ThemedCard {
-                                    HStack {
-                                        Circle()
-                                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
-                                            .frame(width: 36, height: 36)
-                                            .overlay {
-                                                Text(String(sponsor.brandName.prefix(1)))
-                                                    .font(.subheadline.bold())
-                                                    .foregroundStyle(.white)
-                                            }
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(sponsor.brandName)
-                                                .font(.subheadline.bold())
-                                                .foregroundStyle(theme.textPrimary)
-                                            Text(sponsor.productName)
-                                                .font(.caption)
-                                                .foregroundStyle(theme.textSecondary)
-                                        }
-                                        Spacer()
-                                        Text("D-\(sponsor.daysRemaining)")
-                                            .font(.title3.bold())
-                                            .foregroundStyle(.orange)
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                        }
+                        expiringSection(theme: theme)
                     }
 
-                    // Recent reels notes
                     if !reelsNotes.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("최근 릴스 노트")
-                                .font(.headline)
-                                .foregroundStyle(theme.textPrimary)
-                                .padding(.horizontal)
-
-                            ForEach(reelsNotes.prefix(3)) { note in
-                                ThemedCard {
-                                    HStack(spacing: 12) {
-                                        RoundedRectangle(cornerRadius: 4)
-                                            .fill(statusColor(note.reelsNoteStatus).opacity(0.8))
-                                            .frame(width: 4)
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(note.title.isEmpty ? "제목 없음" : note.title)
-                                                .font(.subheadline.bold())
-                                                .foregroundStyle(theme.textPrimary)
-                                            Text(note.plainContent.prefix(50))
-                                                .font(.caption)
-                                                .foregroundStyle(theme.textSecondary)
-                                                .lineLimit(1)
-                                        }
-                                        Spacer()
-                                        StatusBadge(status: note.reelsNoteStatus)
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                        }
+                        recentNotesSection(theme: theme)
                     }
 
-                    // Empty state
                     if sponsorships.isEmpty && reelsNotes.isEmpty {
                         emptyState(theme: theme)
                     }
                 }
-                .padding(.bottom, 20)
+                .padding(.bottom, 24)
             }
             .background(theme.background)
-            .refreshable {
-                await DataManager.shared.fetchAll()
-            }
+            .refreshable { await DataManager.shared.fetchAll() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: SettingsView()) {
@@ -168,39 +91,200 @@ struct DashboardView: View {
         }
     }
 
-    @ViewBuilder
-    private func headerSection(theme: AppTheme) -> some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: theme.gradient,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .frame(height: 130)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay {
-                VStack(spacing: 6) {
-                    Text(greeting)
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.85))
-                    Text("Influe")
-                        .font(.system(.title, design: .rounded).bold())
-                        .foregroundStyle(.white)
-                    if activeSponsors.count > 0 {
-                        Text("진행중인 협찬 \(activeSponsors.count)건")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                            .background(.white.opacity(0.2), in: Capsule())
-                    }
+    private func headerCard(theme: AppTheme) -> some View {
+        ZStack(alignment: .bottomLeading) {
+            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text(greeting)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.85))
+
+                Text("Influe")
+                    .font(.system(.largeTitle, design: .rounded).bold())
+                    .foregroundStyle(.white)
+
+                HStack(spacing: 16) {
+                    headerStat(label: "진행중", value: "\(activeSponsors.count)건")
+                    headerStatDivider()
+                    headerStat(label: "정산 대기", value: "\(pendingSettlements.count)건")
+                    headerStatDivider()
+                    headerStat(label: "마감 임박", value: "\(expiringSoon.count)건")
                 }
+                .padding(.top, 4)
             }
-            .padding(.horizontal)
+            .padding(24)
+        }
+        .frame(height: 160)
+        .padding(.horizontal)
+    }
+
+    private func headerStat(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(.title3.bold())
+                .foregroundStyle(.white)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.75))
         }
     }
 
-    @ViewBuilder
+    private func headerStatDivider() -> some View {
+        Rectangle()
+            .fill(.white.opacity(0.3))
+            .frame(width: 1, height: 28)
+    }
+
+    private func miniStatCard(title: String, icon: String, iconColor: Color, primary: String, sub: String, theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+                Spacer()
+                Text(title)
+                    .font(.caption.bold())
+                    .foregroundStyle(theme.textSecondary)
+            }
+            Text(primary)
+                .font(.title3.bold())
+                .foregroundStyle(theme.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(sub)
+                .font(.caption)
+                .foregroundStyle(theme.textSecondary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: theme.primary.opacity(0.06), radius: 8, y: 4)
+    }
+
+    private func pendingSection(theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("정산 대기", systemImage: "clock.fill")
+                    .font(.headline)
+                    .foregroundStyle(theme.textPrimary)
+                Spacer()
+                Text(pendingAmount.krwFormatted)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.orange)
+            }
+            .padding(.horizontal)
+
+            ForEach(pendingSettlements) { item in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.orange.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Image(systemName: "clock.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.orange)
+                            }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.brandName)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            if !item.productName.isEmpty {
+                                Text(item.productName)
+                                    .font(.caption)
+                                    .foregroundStyle(theme.textSecondary)
+                            }
+                        }
+                        Spacer()
+                        Text(item.amount.krwFormatted)
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func expiringSection(theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("마감 임박", systemImage: "exclamationmark.triangle.fill")
+                .font(.headline)
+                .foregroundStyle(theme.textPrimary)
+                .padding(.horizontal)
+
+            ForEach(expiringSoon) { item in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Text(String(item.brandName.prefix(1)))
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(.white)
+                            }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.brandName)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            if !item.productName.isEmpty {
+                                Text(item.productName)
+                                    .font(.caption)
+                                    .foregroundStyle(theme.textSecondary)
+                            }
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("D-\(item.daysRemaining)")
+                                .font(.title3.bold())
+                                .foregroundStyle(.orange)
+                            Text("남음")
+                                .font(.caption2)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
+    private func recentNotesSection(theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("최근 릴스 노트")
+                .font(.headline)
+                .foregroundStyle(theme.textPrimary)
+                .padding(.horizontal)
+
+            ForEach(reelsNotes.prefix(3)) { note in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(statusColor(note.reelsNoteStatus).opacity(0.8))
+                            .frame(width: 4, height: 44)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                                .lineLimit(1)
+                            Text(note.plainContent.isEmpty ? "내용 없음" : note.plainContent)
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                                .lineLimit(1)
+                        }
+                        Spacer()
+                        StatusBadge(status: note.reelsNoteStatus)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
     private func emptyState(theme: AppTheme) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "sparkles")

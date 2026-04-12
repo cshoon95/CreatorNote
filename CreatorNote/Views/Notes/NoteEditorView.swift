@@ -18,6 +18,8 @@ struct NoteEditorView: View {
     @State private var tagInput = ""
     @State private var tags: [String] = []
     @State private var isSaving = false
+    @State private var errorMessage: String?
+    @State private var showError = false
     @State private var editorCoordinator = RichTextCoordinator()
 
     init(reelsNote: ReelsNoteDTO? = nil) {
@@ -71,16 +73,27 @@ struct NoteEditorView: View {
                     Button("취소") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("저장") {
+                    Button {
                         Haptic.success()
-                        save()
+                        Task { await save() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().scaleEffect(0.85)
+                        } else {
+                            Text("저장")
+                                .fontWeight(.bold)
+                                .foregroundStyle(theme.primary)
+                        }
                     }
-                    .foregroundStyle(theme.primary)
-                    .fontWeight(.bold)
                     .disabled(isSaving)
                 }
             }
             .onAppear { loadContent() }
+            .alert("오류", isPresented: $showError) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
     }
 
@@ -96,7 +109,7 @@ struct NoteEditorView: View {
                         HStack(spacing: 4) {
                             Image(systemName: s.icon)
                                 .font(.caption2)
-                            Text(s.rawValue)
+                            Text(s.displayName)
                                 .font(.caption.bold())
                         }
                         .padding(.horizontal, 12)
@@ -108,6 +121,7 @@ struct NoteEditorView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
         .padding(.bottom, 8)
 
@@ -147,6 +161,7 @@ struct NoteEditorView: View {
                     }
             }
             .padding(.horizontal, 16)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         }
         .padding(.bottom, 4)
     }
@@ -176,8 +191,10 @@ struct NoteEditorView: View {
         attributedContent = attr
     }
 
-    private func save() {
+    private func save() async {
         isSaving = true
+        defer { isSaving = false }
+        DataManager.shared.errorMessage = nil
         let rtfData = try? attributedContent.data(
             from: NSRange(location: 0, length: attributedContent.length),
             documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
@@ -192,20 +209,18 @@ struct NoteEditorView: View {
                 updated.status = status.rawValue
                 updated.tags = tags
                 updated.updatedAt = .now
-                Task { await DataManager.shared.updateReelsNote(updated) }
+                await DataManager.shared.updateReelsNote(updated)
             } else {
-                Task {
-                    if let created = await DataManager.shared.createReelsNote(
-                        title: title,
-                        plainContent: plainContent,
-                        status: status,
-                        tags: tags
-                    ) {
-                        // attributedContent is stored separately if needed
-                        var note = created
-                        note.attributedContent = rtfData
-                        await DataManager.shared.updateReelsNote(note)
-                    }
+                if let created = await DataManager.shared.createReelsNote(
+                    title: title,
+                    plainContent: plainContent,
+                    status: status,
+                    tags: tags
+                ) {
+                    // attributedContent is stored separately if needed
+                    var note = created
+                    note.attributedContent = rtfData
+                    await DataManager.shared.updateReelsNote(note)
                 }
             }
         case .general(let existing):
@@ -214,20 +229,24 @@ struct NoteEditorView: View {
                 updated.plainContent = plainContent
                 updated.attributedContent = rtfData
                 updated.updatedAt = .now
-                Task { await DataManager.shared.updateGeneralNote(updated) }
+                await DataManager.shared.updateGeneralNote(updated)
             } else {
-                Task {
-                    if let created = await DataManager.shared.createGeneralNote(
-                        title: title,
-                        plainContent: plainContent
-                    ) {
-                        var note = created
-                        note.attributedContent = rtfData
-                        await DataManager.shared.updateGeneralNote(note)
-                    }
+                if let created = await DataManager.shared.createGeneralNote(
+                    title: title,
+                    plainContent: plainContent
+                ) {
+                    var note = created
+                    note.attributedContent = rtfData
+                    await DataManager.shared.updateGeneralNote(note)
                 }
             }
         }
-        dismiss()
+
+        if let msg = DataManager.shared.errorMessage {
+            errorMessage = msg
+            showError = true
+        } else {
+            dismiss()
+        }
     }
 }

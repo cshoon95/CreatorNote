@@ -35,6 +35,13 @@ struct AppTheme {
     let textPrimary: Color
     let textSecondary: Color
     let gradient: [Color]
+    let success: Color
+    let warning: Color
+    let danger: Color
+    let divider: Color
+
+    var isDark: Bool { type == .midnight }
+    var colorScheme: ColorScheme? { isDark ? .dark : nil }
 
     static func theme(for type: AppThemeType) -> AppTheme {
         switch type {
@@ -49,7 +56,11 @@ struct AppTheme {
                 cardBackground: .white,
                 textPrimary: Color(hex: "1A1A2E"),
                 textSecondary: Color(hex: "6B6B8D"),
-                gradient: [Color(hex: "7C5CFC"), Color(hex: "B39DDB")]
+                gradient: [Color(hex: "7C5CFC"), Color(hex: "B39DDB")],
+                success: .green,
+                warning: .orange,
+                danger: Color(red: 1, green: 0.23, blue: 0.19),
+                divider: Color.primary.opacity(0.12)
             )
         case .rose:
             return AppTheme(
@@ -62,7 +73,11 @@ struct AppTheme {
                 cardBackground: .white,
                 textPrimary: Color(hex: "2D1B2E"),
                 textSecondary: Color(hex: "8D6B73"),
-                gradient: [Color(hex: "E91E63"), Color(hex: "F48FB1")]
+                gradient: [Color(hex: "E91E63"), Color(hex: "F48FB1")],
+                success: .green,
+                warning: .orange,
+                danger: Color(red: 1, green: 0.23, blue: 0.19),
+                divider: Color.primary.opacity(0.12)
             )
         case .ocean:
             return AppTheme(
@@ -75,7 +90,11 @@ struct AppTheme {
                 cardBackground: .white,
                 textPrimary: Color(hex: "0D1B2A"),
                 textSecondary: Color(hex: "546E7A"),
-                gradient: [Color(hex: "0288D1"), Color(hex: "4FC3F7")]
+                gradient: [Color(hex: "0288D1"), Color(hex: "4FC3F7")],
+                success: .green,
+                warning: .orange,
+                danger: Color(red: 1, green: 0.23, blue: 0.19),
+                divider: Color.primary.opacity(0.12)
             )
         case .mint:
             return AppTheme(
@@ -88,7 +107,11 @@ struct AppTheme {
                 cardBackground: .white,
                 textPrimary: Color(hex: "1A2E2B"),
                 textSecondary: Color(hex: "5D7D77"),
-                gradient: [Color(hex: "00BFA5"), Color(hex: "80CBC4")]
+                gradient: [Color(hex: "00BFA5"), Color(hex: "80CBC4")],
+                success: .green,
+                warning: .orange,
+                danger: Color(red: 1, green: 0.23, blue: 0.19),
+                divider: Color.primary.opacity(0.12)
             )
         case .sunset:
             return AppTheme(
@@ -101,7 +124,11 @@ struct AppTheme {
                 cardBackground: .white,
                 textPrimary: Color(hex: "2E1A0D"),
                 textSecondary: Color(hex: "8D7560"),
-                gradient: [Color(hex: "FF6D00"), Color(hex: "FFAB40")]
+                gradient: [Color(hex: "FF6D00"), Color(hex: "FFAB40")],
+                success: .green,
+                warning: .orange,
+                danger: Color(red: 1, green: 0.23, blue: 0.19),
+                divider: Color.primary.opacity(0.12)
             )
         case .midnight:
             return AppTheme(
@@ -114,7 +141,11 @@ struct AppTheme {
                 cardBackground: Color(hex: "232346"),
                 textPrimary: Color(hex: "E8E8F0"),
                 textSecondary: Color(hex: "9999B3"),
-                gradient: [Color(hex: "5C6BC0"), Color(hex: "7986CB")]
+                gradient: [Color(hex: "5C6BC0"), Color(hex: "7986CB")],
+                success: Color(red: 0.2, green: 0.8, blue: 0.4),
+                warning: Color(red: 1, green: 0.7, blue: 0.2),
+                danger: Color(red: 1, green: 0.35, blue: 0.35),
+                divider: Color.primary.opacity(0.12)
             )
         }
     }

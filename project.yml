@@ -25,11 +25,6 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
-    entitlements:
-      path: CreatorNote/Resources/CreatorNote.entitlements
-      properties:
-        com.apple.developer.applesignin:
-          - Default
     settings:
       base:
         INFOPLIST_FILE: CreatorNote/Resources/Info.plist

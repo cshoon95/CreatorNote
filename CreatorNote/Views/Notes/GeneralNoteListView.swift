@@ -21,69 +21,52 @@ struct GeneralNoteListView: View {
 
     var body: some View {
         let theme = themeManager.theme
-        VStack(spacing: 0) {
-            if filtered.isEmpty {
-                Spacer()
-                VStack(spacing: 12) {
-                    Image(systemName: notes.isEmpty ? "doc.text" : "magnifyingglass")
-                        .font(.system(size: 48))
-                        .foregroundStyle(theme.primary.opacity(0.5))
-                    Text(notes.isEmpty ? "메모가 없습니다" : "검색 결과가 없습니다")
+        ZStack(alignment: .bottomTrailing) {
+            VStack(spacing: 0) {
+                // 검색바
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
                         .foregroundStyle(theme.textSecondary)
-                    if notes.isEmpty {
-                        Text("자유롭게 메모를 작성해보세요")
-                            .font(.caption)
-                            .foregroundStyle(theme.textSecondary)
+                    TextField("메모 검색", text: $searchText)
+                        .foregroundStyle(theme.textPrimary)
+                    if !searchText.isEmpty {
+                        Button { searchText = "" } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(theme.textSecondary)
+                        }
                     }
                 }
-                Spacer()
-            } else {
-                List {
-                    ForEach(filtered) { note in
-                        Button {
-                            selectedNote = note
-                            showingEditor = true
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack {
-                                    if note.isPinned {
-                                        Image(systemName: "pin.fill")
-                                            .font(.caption2)
-                                            .foregroundStyle(theme.primary)
+                .padding(14)
+                .background(theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 12)
+
+                if filtered.isEmpty {
+                    emptyState(theme: theme)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(filtered) { note in
+                                noteCard(note, theme: theme)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        Haptic.selection()
+                                        selectedNote = note
+                                        showingEditor = true
                                     }
-                                    Text(note.title.isEmpty ? "제목 없음" : note.title)
-                                        .font(.subheadline.bold())
-                                        .foregroundStyle(theme.textPrimary)
-                                }
-                                if !note.plainContent.isEmpty {
-                                    Text(note.plainContent.prefix(60))
-                                        .font(.caption)
-                                        .foregroundStyle(theme.textSecondary)
-                                        .lineLimit(2)
-                                }
-                                Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
-                                    .font(.caption2)
-                                    .foregroundStyle(theme.textSecondary.opacity(0.7))
                             }
-                            .padding(.vertical, 4)
                         }
-                        .listRowBackground(theme.cardBackground)
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                Task { await togglePin(note) }
-                            } label: {
-                                Label(note.isPinned ? "고정 해제" : "고정", systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill")
-                            }
-                            .tint(theme.primary)
-                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 4)
+                        .padding(.bottom, 96)
                     }
-                    .onDelete(perform: delete)
                 }
-                .scrollContentBackground(.hidden)
-                .searchable(text: $searchText, prompt: "메모 검색")
             }
-        }
-        .overlay(alignment: .bottomTrailing) {
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+
             Button {
                 selectedNote = nil
                 showingEditor = true
@@ -93,32 +76,125 @@ struct GeneralNoteListView: View {
                     .foregroundStyle(.white)
                     .frame(width: 56, height: 56)
                     .background(
-                        LinearGradient(colors: themeManager.theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                        LinearGradient(
+                            colors: theme.gradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
                     )
                     .clipShape(Circle())
-                    .shadow(color: themeManager.theme.primary.opacity(0.3), radius: 8, y: 4)
+                    .shadow(color: theme.primary.opacity(0.35), radius: 10, y: 5)
             }
             .padding(20)
         }
         .sheet(isPresented: $showingEditor) {
-            if let selectedNote {
-                NoteEditorView(generalNote: selectedNote)
-            } else {
-                NoteEditorView(generalNote: nil as GeneralNoteDTO?)
+            NoteEditorView(generalNote: selectedNote)
+        }
+    }
+
+    private func noteCard(_ note: GeneralNoteDTO, theme: AppTheme) -> some View {
+        HStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(theme.primary)
+                .frame(width: 4)
+                .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 6) {
+                    if note.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.caption2)
+                            .foregroundStyle(theme.primary)
+                            .rotationEffect(.degrees(45))
+                    }
+                    Text(note.title.isEmpty ? "제목 없음" : note.title)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(theme.textPrimary)
+                        .lineLimit(1)
+                    Spacer()
+                }
+
+                if !note.plainContent.isEmpty {
+                    Text(note.plainContent)
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+
+                if !note.tags.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(note.tags.prefix(5), id: \.self) { tag in
+                                Text("#\(tag)")
+                                    .font(.caption2.bold())
+                                    .foregroundStyle(theme.accent)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(theme.accent.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
+
+                HStack {
+                    Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
+                        .font(.caption2)
+                        .foregroundStyle(theme.textSecondary.opacity(0.7))
+                    if let name = authorName(for: note.createdBy) {
+                        Text("· \(name)")
+                            .font(.caption2)
+                            .foregroundStyle(theme.textSecondary.opacity(0.7))
+                    }
+                    Spacer()
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+        }
+        .background(theme.cardBackground)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 3)
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                Task { await togglePin(note) }
+            } label: {
+                Label(
+                    note.isPinned ? "고정 해제" : "고정",
+                    systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill"
+                )
+            }
+            .tint(theme.primary)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                Task { await DataManager.shared.deleteGeneralNote(id: note.id) }
+            } label: {
+                Label("삭제", systemImage: "trash.fill")
             }
         }
+    }
+
+    private func authorName(for userId: UUID?) -> String? {
+        guard let userId else { return nil }
+        let currentUserId = AuthManager.shared.currentUser?.id
+        if userId == currentUserId { return "나" }
+        return WorkspaceManager.shared.members.first { $0.id == userId }?.displayName
+    }
+
+    private func emptyState(theme: AppTheme) -> some View {
+        EmptyStateView(
+            icon: "note.text",
+            title: notes.isEmpty ? "메모가 없습니다" : "검색 결과가 없습니다",
+            subtitle: notes.isEmpty ? "자유롭게 메모를 작성해보세요" : "다른 검색어를 입력해보세요",
+            color: theme.primary
+        )
     }
 
     private func togglePin(_ note: GeneralNoteDTO) async {
         var updated = note
         updated.isPinned.toggle()
         await DataManager.shared.updateGeneralNote(updated)
-    }
-
-    private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            let item = filtered[index]
-            Task { await DataManager.shared.deleteGeneralNote(id: item.id) }
-        }
     }
 }

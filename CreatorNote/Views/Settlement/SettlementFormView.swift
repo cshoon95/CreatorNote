@@ -7,127 +7,284 @@ struct SettlementFormView: View {
     var editingSettlement: SettlementDTO?
 
     @State private var brandName = ""
-    @State private var amount: Double = 0
-    @State private var fee: Double = 0
-    @State private var tax: Double = 0
+    @State private var amountText = ""
+    @State private var feeText = ""
+    @State private var taxText = ""
     @State private var settlementDate = Date()
     @State private var hasSettlementDate = false
     @State private var isPaid = false
     @State private var memo = ""
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+    @State private var showError = false
 
-    private var netAmount: Double {
-        amount - fee - tax
+    @FocusState private var focusedField: Field?
+
+    enum Field { case brandName, amount, fee, tax, memo }
+
+    private var parsedAmount: Double { Double(amountText.filter { $0.isNumber }) ?? 0 }
+    private var parsedFee: Double { Double(feeText.filter { $0.isNumber }) ?? 0 }
+    private var parsedTax: Double { Double(taxText.filter { $0.isNumber }) ?? 0 }
+    private var netAmount: Double { parsedAmount - parsedFee - parsedTax }
+
+    private var canSave: Bool {
+        !brandName.trimmingCharacters(in: .whitespaces).isEmpty && !isLoading
     }
 
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
-            Form {
-                Section {
-                    TextField("브랜드명", text: $brandName)
-                } header: {
-                    Text("기본 정보")
-                }
+            ScrollView {
+                VStack(spacing: 16) {
 
-                Section {
-                    HStack {
-                        Text("총 금액 ₩")
-                        TextField("금액", value: $amount, format: .number)
-                            .keyboardType(.numberPad)
+                    sectionCard(title: "기본 정보", theme: theme) {
+                        rowField(theme: theme) {
+                            TextField("브랜드명 *", text: $brandName)
+                                .focused($focusedField, equals: .brandName)
+                                .foregroundStyle(theme.textPrimary)
+                        }
                     }
-                    HStack {
-                        Text("수수료 ₩")
-                        TextField("수수료", value: $fee, format: .number)
-                            .keyboardType(.numberPad)
+
+                    sectionCard(title: "금액 정보", theme: theme) {
+                        VStack(spacing: 0) {
+                            rowField(theme: theme) {
+                                HStack(spacing: 8) {
+                                    Text("총 금액")
+                                        .font(.subheadline)
+                                        .foregroundStyle(theme.textSecondary)
+                                        .frame(width: 60, alignment: .leading)
+                                    HStack(spacing: 4) {
+                                        TextField("0", text: $amountText)
+                                            .keyboardType(.numberPad)
+                                            .focused($focusedField, equals: .amount)
+                                            .foregroundStyle(theme.textPrimary)
+                                            .onChange(of: amountText) { _, new in
+                                                let digits = new.filter { $0.isNumber }
+                                                if digits != new { amountText = digits }
+                                            }
+                                    }
+                                }
+                            }
+                            Divider()
+                                .background(theme.textSecondary.opacity(0.2))
+                                .padding(.horizontal, 16)
+                            rowField(theme: theme) {
+                                HStack(spacing: 8) {
+                                    Text("수수료")
+                                        .font(.subheadline)
+                                        .foregroundStyle(theme.textSecondary)
+                                        .frame(width: 60, alignment: .leading)
+                                    HStack(spacing: 4) {
+                                        TextField("0", text: $feeText)
+                                            .keyboardType(.numberPad)
+                                            .focused($focusedField, equals: .fee)
+                                            .foregroundStyle(theme.textPrimary)
+                                            .onChange(of: feeText) { _, new in
+                                                let digits = new.filter { $0.isNumber }
+                                                if digits != new { feeText = digits }
+                                            }
+                                    }
+                                }
+                            }
+                            Divider()
+                                .background(theme.textSecondary.opacity(0.2))
+                                .padding(.horizontal, 16)
+                            rowField(theme: theme) {
+                                HStack(spacing: 8) {
+                                    Text("세금")
+                                        .font(.subheadline)
+                                        .foregroundStyle(theme.textSecondary)
+                                        .frame(width: 60, alignment: .leading)
+                                    HStack(spacing: 4) {
+                                        TextField("0", text: $taxText)
+                                            .keyboardType(.numberPad)
+                                            .focused($focusedField, equals: .tax)
+                                            .foregroundStyle(theme.textPrimary)
+                                            .onChange(of: taxText) { _, new in
+                                                let digits = new.filter { $0.isNumber }
+                                                if digits != new { taxText = digits }
+                                            }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    HStack {
-                        Text("세금 ₩")
-                        TextField("세금", value: $tax, format: .number)
-                            .keyboardType(.numberPad)
-                    }
-                    HStack {
+
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("실수령액")
-                            .fontWeight(.bold)
-                        Spacer()
-                        Text(netAmount.krwFormatted)
-                            .fontWeight(.bold)
-                            .foregroundStyle(theme.primary)
+                            .font(.caption.bold())
+                            .foregroundStyle(theme.textSecondary)
+                            .padding(.leading, 4)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("실수령액")
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.textSecondary)
+                                Text(netAmount.krwFormatted)
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundStyle(
+                                        netAmount >= 0 ? theme.primary : Color.red
+                                    )
+                                    .contentTransition(.numericText())
+                                    .animation(.spring(duration: 0.3), value: netAmount)
+                            }
+                            Spacer()
+                            Image(systemName: "wonsign.circle.fill")
+                                .font(.system(size: 40))
+                                .foregroundStyle(theme.primary.opacity(0.25))
+                        }
+                        .padding(20)
+                        .background(theme.cardBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(theme.primary.opacity(0.2), lineWidth: 1)
+                        )
                     }
-                } header: {
-                    Text("금액 정보")
-                }
 
-                Section {
-                    Toggle("정산일 설정", isOn: $hasSettlementDate)
-                    if hasSettlementDate {
-                        DatePicker("정산일", selection: $settlementDate, displayedComponents: .date)
+                    sectionCard(title: "정산 상태", theme: theme) {
+                        VStack(spacing: 0) {
+                            rowField(theme: theme) {
+                                Toggle(isOn: $hasSettlementDate) {
+                                    Text("정산일 설정")
+                                        .foregroundStyle(theme.textPrimary)
+                                }
+                                .tint(theme.primary)
+                                .onChange(of: hasSettlementDate) { _, _ in Haptic.selection() }
+                            }
+                            if hasSettlementDate {
+                                Divider()
+                                    .background(theme.textSecondary.opacity(0.2))
+                                    .padding(.horizontal, 16)
+                                rowField(theme: theme) {
+                                    DatePicker("정산일", selection: $settlementDate, displayedComponents: .date)
+                                        .foregroundStyle(theme.textPrimary)
+                                        .tint(theme.primary)
+                                }
+                            }
+                            Divider()
+                                .background(theme.textSecondary.opacity(0.2))
+                                .padding(.horizontal, 16)
+                            rowField(theme: theme) {
+                                Toggle(isOn: $isPaid) {
+                                    Text("지급 완료")
+                                        .foregroundStyle(theme.textPrimary)
+                                }
+                                .tint(theme.primary)
+                                .onChange(of: isPaid) { _, _ in Haptic.selection() }
+                            }
+                        }
                     }
-                    Toggle("지급 완료", isOn: $isPaid)
-                } header: {
-                    Text("정산 상태")
-                }
 
-                Section {
-                    TextEditor(text: $memo)
-                        .frame(minHeight: 80)
-                } header: {
-                    Text("메모")
+                    sectionCard(title: "메모", theme: theme) {
+                        TextEditor(text: $memo)
+                            .focused($focusedField, equals: .memo)
+                            .foregroundStyle(theme.textPrimary)
+                            .scrollContentBackground(.hidden)
+                            .scrollDisabled(true)
+                            .frame(minHeight: 100)
+                            .padding(16)
+                    }
+
+                    Spacer().frame(height: 20)
                 }
+                .padding()
             }
-            .scrollContentBackground(.hidden)
             .background(theme.background)
             .navigationTitle(editingSettlement == nil ? "정산 추가" : "정산 편집")
             .navigationBarTitleDisplayMode(.inline)
+            .preferredColorScheme(theme.colorScheme)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("취소") { dismiss() }
+                        .foregroundStyle(theme.textSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("저장") { save() }
-                        .disabled(brandName.isEmpty)
-                        .foregroundStyle(theme.primary)
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        if isLoading {
+                            ProgressView().scaleEffect(0.85)
+                        } else {
+                            Text("저장")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(canSave ? theme.primary : theme.textSecondary.opacity(0.5))
+                        }
+                    }
+                    .disabled(!canSave)
                 }
             }
             .onAppear { loadIfEditing() }
+            .alert("오류", isPresented: $showError) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "")
+            }
         }
+    }
+
+    private func sectionCard<Content: View>(title: String, theme: AppTheme, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.bold())
+                .foregroundStyle(theme.textSecondary)
+                .padding(.leading, 4)
+            content()
+                .background(theme.cardBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func rowField<Content: View>(theme: AppTheme, @ViewBuilder content: () -> Content) -> some View {
+        content()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
     }
 
     private func loadIfEditing() {
         guard let s = editingSettlement else { return }
         brandName = s.brandName
-        amount = s.amount
-        fee = s.fee
-        tax = s.tax
+        if s.amount > 0 { amountText = String(Int(s.amount)) }
+        if s.fee > 0 { feeText = String(Int(s.fee)) }
+        if s.tax > 0 { taxText = String(Int(s.tax)) }
         hasSettlementDate = s.settlementDate != nil
         settlementDate = s.settlementDate ?? Date()
         isPaid = s.isPaid
         memo = s.memo
     }
 
-    private func save() {
+    private func save() async {
+        isLoading = true
+        defer { isLoading = false }
+        DataManager.shared.errorMessage = nil
+        let trimmedBrand = brandName.trimmingCharacters(in: .whitespaces)
         if var updated = editingSettlement {
-            updated.brandName = brandName
-            updated.amount = amount
-            updated.fee = fee
-            updated.tax = tax
+            updated.brandName = trimmedBrand
+            updated.amount = parsedAmount
+            updated.fee = parsedFee
+            updated.tax = parsedTax
             updated.settlementDate = hasSettlementDate ? settlementDate : nil
             updated.isPaid = isPaid
             updated.memo = memo
-            Task { await DataManager.shared.updateSettlement(updated) }
+            await DataManager.shared.updateSettlement(updated)
         } else {
-            Task {
-                await DataManager.shared.createSettlement(
-                    brandName: brandName,
-                    amount: amount,
-                    fee: fee,
-                    tax: tax,
-                    settlementDate: hasSettlementDate ? settlementDate : nil,
-                    isPaid: isPaid,
-                    memo: memo
-                )
-            }
+            await DataManager.shared.createSettlement(
+                brandName: trimmedBrand,
+                amount: parsedAmount,
+                fee: parsedFee,
+                tax: parsedTax,
+                settlementDate: hasSettlementDate ? settlementDate : nil,
+                isPaid: isPaid,
+                memo: memo
+            )
         }
-        dismiss()
+        if let msg = DataManager.shared.errorMessage {
+            errorMessage = msg
+            showError = true
+        } else {
+            dismiss()
+        }
     }
-
 }

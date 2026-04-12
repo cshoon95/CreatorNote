@@ -7,28 +7,26 @@ struct NotesTabView: View {
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("노트 유형", selection: $selectedSegment) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "video.fill")
-                        Text("릴스 노트")
-                    }.tag(0)
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.text")
-                        Text("일반 메모")
-                    }.tag(1)
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
+            Group {
                 if selectedSegment == 0 {
                     ReelsNoteListView()
                 } else {
                     GeneralNoteListView()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(theme.background)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Picker("", selection: $selectedSegment) {
+                        Text("릴스 노트").tag(0)
+                        Text("일반 메모").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 220)
+                }
+            }
         }
     }
 }
