@@ -1,11 +1,11 @@
 import Foundation
 
 enum SponsorshipStatus: String, Codable, CaseIterable {
-    case preSubmit
-    case underReview
-    case submitted
-    case pendingSettlement
-    case completed
+    case preSubmit = "preSubmit"
+    case underReview = "underReview"
+    case submitted = "submitted"
+    case pendingSettlement = "pendingSettlement"
+    case completed = "completed"
 
     var displayName: String {
         switch self {
@@ -24,16 +24,6 @@ enum SponsorshipStatus: String, Codable, CaseIterable {
         case .submitted: return "checkmark.circle.fill"
         case .pendingSettlement: return "wonsign.circle.fill"
         case .completed: return "star.circle.fill"
-        }
-    }
-
-    var color: String {
-        switch self {
-        case .preSubmit: return "gray"
-        case .underReview: return "orange"
-        case .submitted: return "blue"
-        case .pendingSettlement: return "purple"
-        case .completed: return "green"
         }
     }
 }

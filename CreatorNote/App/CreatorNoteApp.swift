@@ -1,19 +1,9 @@
 import SwiftUI
 @preconcurrency import Supabase
-import GoogleMobileAds
-import AppTrackingTransparency
 
 @main
 struct InflueApp: App {
     @State private var themeManager = ThemeManager.shared
-
-    init() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            ATTrackingManager.requestTrackingAuthorization { _ in
-                GADMobileAds.sharedInstance().start(completionHandler: nil)
-            }
-        }
-    }
 
     var body: some Scene {
         WindowGroup {
