@@ -110,6 +110,50 @@ final class AuthManager {
         }
     }
 
+    // MARK: - Delete Account
+
+    func deleteAccount() async {
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            // Get current session JWT for authorization
+            let session = try await supabase.auth.session
+            let accessToken = session.accessToken
+
+            // Call the Edge Function which handles full account deletion
+            let url = URL(string: "https://wrnglzfsgoujboyjomuu.supabase.co/functions/v1/delete-account")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+                let body = String(data: data, encoding: .utf8) ?? "Unknown error"
+                errorMessage = "계정 삭제에 실패했습니다: \(body)"
+                return
+            }
+
+            // Sign out locally after successful server-side deletion
+            try? await supabase.auth.signOut()
+
+            currentUser = nil
+            currentProfile = nil
+            isAuthenticated = false
+            UserDefaults.standard.removeObject(forKey: "current_workspace_id")
+            UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
+
+            // 로컬 캐시 삭제
+            let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("DataCache")
+            try? FileManager.default.removeItem(at: cacheDir)
+        } catch {
+            errorMessage = "계정 삭제에 실패했습니다: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: - Profile
 
     private func fetchProfile() async {

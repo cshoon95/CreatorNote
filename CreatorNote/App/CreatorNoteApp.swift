@@ -1,9 +1,19 @@
 import SwiftUI
 @preconcurrency import Supabase
+import GoogleMobileAds
+import AppTrackingTransparency
 
 @main
 struct CreatorNoteApp: App {
     @State private var themeManager = ThemeManager.shared
+
+    init() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            ATTrackingManager.requestTrackingAuthorization { _ in
+                GADMobileAds.sharedInstance().start(completionHandler: nil)
+            }
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -21,7 +31,7 @@ struct CreatorNoteApp: App {
 struct RootView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var authChecked = false
-    @State private var showWorkspaceSetup = false
+    @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
 
     var body: some View {
         Group {
@@ -29,10 +39,12 @@ struct RootView: View {
                 SplashView()
             } else if !AuthManager.shared.isAuthenticated {
                 LoginView()
-            } else if !WorkspaceManager.shared.hasWorkspace {
-                WorkspaceSetupView {
-                    showWorkspaceSetup = false
+            } else if showOnboarding {
+                OnboardingView {
+                    showOnboarding = false
                 }
+            } else if !WorkspaceManager.shared.hasWorkspace {
+                WorkspaceSetupView {}
             } else {
                 ContentView()
             }
@@ -60,7 +72,7 @@ struct SplashView: View {
         "초대 코드로 파트너와 공유해요 🔗"
     ]
 
-    private let message: String = features.randomElement()!
+    private let message: String = features.randomElement() ?? "로딩 중..."
 
     var body: some View {
         let theme = themeManager.theme

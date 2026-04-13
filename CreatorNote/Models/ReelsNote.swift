@@ -5,6 +5,8 @@ enum ReelsNoteStatus: String, Codable, CaseIterable {
     case readyToUpload = "업로드 대기"
     case uploaded = "업로드 완료"
 
+    var displayName: String { rawValue }
+
     var icon: String {
         switch self {
         case .drafting: return "pencil.circle.fill"

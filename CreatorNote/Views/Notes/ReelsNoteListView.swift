@@ -6,6 +6,14 @@ struct ReelsNoteListView: View {
     @State private var showingEditor = false
     @State private var selectedNote: ReelsNoteDTO?
     @State private var searchText = ""
+    @State private var noteToDelete: ReelsNoteDTO?
+    @State private var sortOrder: SortOrder = .latest
+
+    enum SortOrder: String, CaseIterable {
+        case latest = "최신순"
+        case title = "제목순"
+        case status = "상태순"
+    }
 
     private var notes: [ReelsNoteDTO] { DataManager.shared.reelsNotes }
 
@@ -20,7 +28,14 @@ struct ReelsNoteListView: View {
                 $0.plainContent.localizedCaseInsensitiveContains(searchText)
             }
         }
-        return result.sorted { ($0.isPinned ? 0 : 1) < ($1.isPinned ? 0 : 1) }
+        return result.sorted { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+            switch sortOrder {
+            case .latest: return lhs.updatedAt > rhs.updatedAt
+            case .title: return lhs.title.localizedCompare(rhs.title) == .orderedAscending
+            case .status: return lhs.status < rhs.status
+            }
+        }
     }
 
     var body: some View {
@@ -30,54 +45,86 @@ struct ReelsNoteListView: View {
                 // 검색바
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
+                        .font(.subheadline)
                         .foregroundStyle(theme.textSecondary)
                     TextField("노트 검색", text: $searchText)
+                        .font(.subheadline)
                         .foregroundStyle(theme.textPrimary)
                     if !searchText.isEmpty {
                         Button { searchText = "" } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .foregroundStyle(theme.textSecondary)
+                                .foregroundStyle(theme.textSecondary.opacity(0.6))
                         }
                     }
                 }
-                .padding(14)
-                .background(theme.cardBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(theme.surfaceBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 4)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        filterChip(
-                            label: "전체",
-                            count: notes.count,
-                            isSelected: filterStatus == nil,
-                            theme: theme
-                        ) {
-                            filterStatus = nil
-                        }
-                        ForEach(ReelsNoteStatus.allCases, id: \.self) { status in
+                // 필터 칩 + 정렬
+                HStack(spacing: 0) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
                             filterChip(
-                                label: status.displayName,
-                                count: notes.filter { $0.reelsNoteStatus == status }.count,
-                                isSelected: filterStatus == status,
+                                label: "전체",
+                                count: notes.count,
+                                isSelected: filterStatus == nil,
                                 theme: theme
                             ) {
-                                filterStatus = status
+                                filterStatus = nil
+                            }
+                            ForEach(ReelsNoteStatus.allCases, id: \.self) { status in
+                                filterChip(
+                                    label: status.displayName,
+                                    count: notes.filter { $0.reelsNoteStatus == status }.count,
+                                    isSelected: filterStatus == status,
+                                    theme: theme
+                                ) {
+                                    filterStatus = status
+                                }
                             }
                         }
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
+
+                    Spacer()
+
+                    Menu {
+                        ForEach(SortOrder.allCases, id: \.self) { order in
+                            Button {
+                                withAnimation { sortOrder = order }
+                            } label: {
+                                HStack {
+                                    Text(order.rawValue)
+                                    if sortOrder == order {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "arrow.up.arrow.down")
+                                .font(.caption2)
+                            Text(sortOrder.rawValue)
+                                .font(.caption)
+                        }
+                        .foregroundStyle(theme.textSecondary)
+                    }
+                    .padding(.trailing, 16)
                 }
+                .padding(.vertical, 10)
 
                 if filtered.isEmpty {
                     emptyState(theme: theme)
                     Spacer()
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: 10) {
                             ForEach(filtered) { note in
                                 noteCard(note, theme: theme)
                                     .contentShape(Rectangle())
@@ -96,30 +143,42 @@ struct ReelsNoteListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
+            // FAB
             Button {
                 selectedNote = nil
                 showingEditor = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: theme.gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .font(.title3)
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 52, height: 52)
+                    .background(theme.cardBackground)
                     .clipShape(Circle())
-                    .shadow(color: theme.primary.opacity(0.35), radius: 10, y: 5)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
+                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
             }
             .padding(20)
         }
         .sheet(isPresented: $showingEditor) {
             NoteEditorView(reelsNote: selectedNote)
         }
+        .alert("노트를 삭제할까요?", isPresented: Binding(
+            get: { noteToDelete != nil },
+            set: { if !$0 { noteToDelete = nil } }
+        )) {
+            Button("취소", role: .cancel) { noteToDelete = nil }
+            Button("삭제", role: .destructive) {
+                if let note = noteToDelete {
+                    Task { await DataManager.shared.deleteReelsNote(id: note.id) }
+                    noteToDelete = nil
+                }
+            }
+        } message: {
+            Text("삭제된 노트는 복구할 수 없습니다")
+        }
     }
+
+    // MARK: - View Builders
 
     private func filterChip(
         label: String,
@@ -130,36 +189,36 @@ struct ReelsNoteListView: View {
     ) -> some View {
         Button(action: {
             Haptic.selection()
-            action()
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+                action()
+            }
         }) {
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Text(label)
-                    .font(.caption.bold())
+                    .font(.caption)
+                    .fontWeight(isSelected ? .bold : .regular)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(isSelected ? .white.opacity(0.3) : theme.primary.opacity(0.15))
-                        .clipShape(Capsule())
+                        .font(.caption2)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
-            .background(isSelected ? theme.primary : theme.surfaceBackground)
-            .foregroundStyle(isSelected ? .white : theme.textSecondary)
-            .clipShape(Capsule())
+            .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 6)
         }
+        .buttonStyle(.plain)
     }
 
     private func noteCard(_ note: ReelsNoteDTO, theme: AppTheme) -> some View {
         HStack(spacing: 0) {
+            // 왼쪽 상태 색상 바
             RoundedRectangle(cornerRadius: 2)
                 .fill(statusColor(note.reelsNoteStatus))
                 .frame(width: 4)
-                .padding(.vertical, 4)
+                .padding(.vertical, 6)
 
             VStack(alignment: .leading, spacing: 8) {
+                // 제목 행
                 HStack(alignment: .center, spacing: 6) {
                     if note.isPinned {
                         Image(systemName: "pin.fill")
@@ -174,6 +233,7 @@ struct ReelsNoteListView: View {
                     Spacer()
                 }
 
+                // 본문 미리보기
                 if !note.plainContent.isEmpty {
                     Text(note.plainContent)
                         .font(.caption)
@@ -182,31 +242,23 @@ struct ReelsNoteListView: View {
                         .multilineTextAlignment(.leading)
                 }
 
+                // 태그
                 if !note.tags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(note.tags.prefix(5), id: \.self) { tag in
-                                Text("#\(tag)")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(theme.accent)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(theme.accent.opacity(0.1))
-                                    .clipShape(Capsule())
-                            }
+                    HStack(spacing: 4) {
+                        ForEach(note.tags.prefix(3), id: \.self) { tag in
+                            Text("#\(tag)")
+                                .font(.caption2)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                 }
 
-                HStack {
+                // 하단 메타 행
+                HStack(spacing: 6) {
                     Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
                         .font(.caption2)
                         .foregroundStyle(theme.textSecondary.opacity(0.7))
-                    if let name = authorName(for: note.createdBy) {
-                        Text("· \(name)")
-                            .font(.caption2)
-                            .foregroundStyle(theme.textSecondary.opacity(0.7))
-                    }
+                    MemberChip(userId: note.createdBy)
                     Spacer()
                     StatusBadge(status: note.reelsNoteStatus)
                 }
@@ -215,9 +267,13 @@ struct ReelsNoteListView: View {
             .padding(.vertical, 14)
         }
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 3)
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(theme.divider, lineWidth: 0.5)
+        )
+        .contextMenu {
             Button {
                 Task { await togglePin(note) }
             } label: {
@@ -226,11 +282,9 @@ struct ReelsNoteListView: View {
                     systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill"
                 )
             }
-            .tint(theme.primary)
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
-                Task { await DataManager.shared.deleteReelsNote(id: note.id) }
+                Haptic.warning()
+                noteToDelete = note
             } label: {
                 Label("삭제", systemImage: "trash.fill")
             }
@@ -246,12 +300,7 @@ struct ReelsNoteListView: View {
         )
     }
 
-    private func authorName(for userId: UUID?) -> String? {
-        guard let userId else { return nil }
-        let currentUserId = AuthManager.shared.currentUser?.id
-        if userId == currentUserId { return "나" }
-        return WorkspaceManager.shared.members.first { $0.id == userId }?.displayName
-    }
+    // MARK: - Helpers
 
     private func statusColor(_ status: ReelsNoteStatus) -> Color {
         switch status {

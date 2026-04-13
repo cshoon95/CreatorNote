@@ -11,18 +11,37 @@ final class ThemeManager {
         }
     }
 
+    var followSystem: Bool {
+        didSet {
+            UserDefaults.standard.set(followSystem, forKey: "followSystemTheme")
+        }
+    }
+
     var theme: AppTheme {
         AppTheme.theme(for: currentThemeType)
+    }
+
+    var resolvedColorScheme: ColorScheme? {
+        if followSystem { return nil }
+        return theme.colorScheme
     }
 
     private init() {
         let saved = UserDefaults.standard.string(forKey: "selectedTheme") ?? ""
         self.currentThemeType = AppThemeType(rawValue: saved) ?? .lavender
+        self.followSystem = UserDefaults.standard.bool(forKey: "followSystemTheme")
     }
 
     func setTheme(_ type: AppThemeType) {
         withAnimation(.easeInOut(duration: 0.3)) {
+            followSystem = false
             currentThemeType = type
+        }
+    }
+
+    func toggleFollowSystem() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            followSystem.toggle()
         }
     }
 }

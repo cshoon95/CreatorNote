@@ -3,6 +3,7 @@ import SwiftUI
 struct SettlementListView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var showingAddSheet = false
+    @State private var settlementToDelete: SettlementDTO?
     @State private var filterTab: FilterTab = .all
 
     enum FilterTab: CaseIterable {
@@ -56,9 +57,10 @@ struct SettlementListView: View {
                                         settlementCard(item, theme: theme)
                                     }
                                     .buttonStyle(.plain)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    .contextMenu {
                                         Button(role: .destructive) {
-                                            Task { await DataManager.shared.deleteSettlement(id: item.id) }
+                                            Haptic.warning()
+                                            settlementToDelete = item
                                         } label: {
                                             Label("삭제", systemImage: "trash")
                                         }
@@ -74,27 +76,42 @@ struct SettlementListView: View {
                 .refreshable { await DataManager.shared.fetchSettlements() }
 
                 Button { showingAddSheet = true } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .font(.body.bold())
-                        Text("정산 추가")
-                            .font(.subheadline.bold())
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing)
-                    )
-                    .clipShape(Capsule())
-                    .shadow(color: theme.primary.opacity(0.4), radius: 12, y: 4)
+                    Image(systemName: "plus")
+                        .font(.title3)
+                        .foregroundStyle(theme.primary)
+                        .frame(width: 52, height: 52)
+                        .background(theme.cardBackground)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
+                        .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(20)
             }
             .navigationBarTitleDisplayMode(.inline)
             .preferredColorScheme(theme.colorScheme)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(destination: SettlementReportView()) {
+                        Image(systemName: "chart.bar.fill")
+                            .foregroundStyle(theme.primary)
+                    }
+                }
+            }
             .sheet(isPresented: $showingAddSheet) { SettlementFormView() }
+            .alert("정산 내역을 삭제할까요?", isPresented: Binding(
+                get: { settlementToDelete != nil },
+                set: { if !$0 { settlementToDelete = nil } }
+            )) {
+                Button("취소", role: .cancel) { settlementToDelete = nil }
+                Button("삭제", role: .destructive) {
+                    if let item = settlementToDelete {
+                        Task { await DataManager.shared.deleteSettlement(id: item.id) }
+                        settlementToDelete = nil
+                    }
+                }
+            } message: {
+                Text("삭제된 정산 내역은 복구할 수 없습니다")
+            }
         }
     }
 
@@ -152,26 +169,26 @@ struct SettlementListView: View {
     }
 
     private func filterTabs(theme: AppTheme) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 20) {
             ForEach(FilterTab.allCases, id: \.self) { tab in
                 Button {
                     Haptic.selection()
                     withAnimation(.spring(duration: 0.25)) { filterTab = tab }
                 } label: {
-                    Text(tab.label)
-                        .font(.subheadline.bold())
-                        .foregroundStyle(filterTab == tab ? .white : theme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(
-                            filterTab == tab
-                                ? AnyShapeStyle(LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing))
-                                : AnyShapeStyle(theme.cardBackground)
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .shadow(color: filterTab == tab ? theme.primary.opacity(0.3) : .clear, radius: 6, y: 2)
+                    VStack(spacing: 6) {
+                        Text(tab.label)
+                            .font(.subheadline)
+                            .fontWeight(filterTab == tab ? .bold : .regular)
+                            .foregroundStyle(filterTab == tab ? theme.textPrimary : theme.textSecondary)
+                        Rectangle()
+                            .fill(filterTab == tab ? theme.primary : .clear)
+                            .frame(height: 2)
+                            .clipShape(Capsule())
+                    }
                 }
+                .buttonStyle(.plain)
             }
+            Spacer()
         }
     }
 

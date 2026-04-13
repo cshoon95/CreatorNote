@@ -152,11 +152,22 @@ struct LoginView: View {
                 .opacity(isLoading && loadingProvider != "google" ? 0.5 : 1.0)
             }
 
-            Text("로그인 시 서비스 이용약관에 동의하게 됩니다.")
-                .font(.caption2)
-                .foregroundStyle(theme.textSecondary.opacity(0.6))
-                .multilineTextAlignment(.center)
-                .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? geo.safeAreaInsets.bottom : 16)
+            HStack(spacing: 0) {
+                Text("로그인 시 ")
+                    .font(.caption2)
+                    .foregroundStyle(theme.textSecondary.opacity(0.6))
+                Link("개인정보처리방침", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880c5b571f566a637d578")!)
+                    .font(.caption2)
+                Text(" 및 ")
+                    .font(.caption2)
+                    .foregroundStyle(theme.textSecondary.opacity(0.6))
+                Link("이용약관", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880a9ab29d6ac3439bbde")!)
+                    .font(.caption2)
+                Text("에 동의하게 됩니다.")
+                    .font(.caption2)
+                    .foregroundStyle(theme.textSecondary.opacity(0.6))
+            }
+            .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? geo.safeAreaInsets.bottom : 16)
         }
         .padding(.horizontal, 28)
         .padding(.bottom, 8)

@@ -16,25 +16,61 @@ final class DataManager {
     private var workspaceId: UUID? { WorkspaceManager.shared.currentWorkspace?.id }
     private var userId: UUID? { AuthManager.shared.currentUser?.id }
 
-    private init() {}
+    private init() { loadCache() }
+
+    private var errorCounter = 0
+    private var isFetching = false
+
+    // MARK: - Offline Cache
+    private static let cacheDir: URL = {
+        let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("DataCache")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }()
+
+    private func saveCache() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        try? encoder.encode(sponsorships).write(to: Self.cacheDir.appendingPathComponent("sponsorships.json"))
+        try? encoder.encode(settlements).write(to: Self.cacheDir.appendingPathComponent("settlements.json"))
+        try? encoder.encode(reelsNotes).write(to: Self.cacheDir.appendingPathComponent("reelsNotes.json"))
+        try? encoder.encode(generalNotes).write(to: Self.cacheDir.appendingPathComponent("generalNotes.json"))
+    }
+
+    private func loadCache() {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        func load<T: Decodable>(_ file: String) -> [T] {
+            guard let data = try? Data(contentsOf: Self.cacheDir.appendingPathComponent(file)) else { return [] }
+            return (try? decoder.decode([T].self, from: data)) ?? []
+        }
+        sponsorships = load("sponsorships.json")
+        settlements = load("settlements.json")
+        reelsNotes = load("reelsNotes.json")
+        generalNotes = load("generalNotes.json")
+    }
 
     private func showError(_ message: String) {
+        errorCounter += 1
+        let myCount = errorCounter
         errorMessage = message
         Task {
             try? await Task.sleep(for: .seconds(3))
-            if errorMessage == message { errorMessage = nil }
+            if errorCounter == myCount { errorMessage = nil }
         }
     }
 
     func fetchAll() async {
-        guard workspaceId != nil else { return }
+        guard !isFetching, workspaceId != nil else { return }
+        isFetching = true
         isLoading = true
-        defer { isLoading = false }
+        defer { isLoading = false; isFetching = false }
         async let s = fetchSponsorships()
         async let t = fetchSettlements()
         async let r = fetchReelsNotes()
         async let g = fetchGeneralNotes()
         _ = await (s, t, r, g)
+        saveCache()
     }
 
     // MARK: - Sponsorships
@@ -153,10 +189,10 @@ final class DataManager {
         } catch { showError("릴스 노트를 불러올 수 없습니다") }
     }
 
-    func createReelsNote(title: String = "", plainContent: String = "", status: ReelsNoteStatus = .drafting, tags: [String] = []) async -> ReelsNoteDTO? {
+    func createReelsNote(title: String = "", plainContent: String = "", attributedContent: Data? = nil, status: ReelsNoteStatus = .drafting, tags: [String] = []) async -> ReelsNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
-            let dto = ReelsNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, status: status.rawValue, tags: tags)
+            let dto = ReelsNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, status: status.rawValue, tags: tags)
             let created: ReelsNoteDTO = try await supabase
                 .from("reels_notes").insert(dto).select().single().execute().value
             reelsNotes.insert(created, at: 0)
@@ -202,10 +238,10 @@ final class DataManager {
         } catch { showError("메모를 불러올 수 없습니다") }
     }
 
-    func createGeneralNote(title: String = "", plainContent: String = "", tags: [String] = []) async -> GeneralNoteDTO? {
+    func createGeneralNote(title: String = "", plainContent: String = "", attributedContent: Data? = nil, tags: [String] = []) async -> GeneralNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
-            let dto = GeneralNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, tags: tags)
+            let dto = GeneralNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, tags: tags)
             let created: GeneralNoteDTO = try await supabase
                 .from("general_notes").insert(dto).select().single().execute().value
             generalNotes.insert(created, at: 0)
@@ -269,18 +305,22 @@ private struct SettlementInsert: Codable {
 
 private struct ReelsNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
-    let plainContent: String; let status: String; let tags: [String]
+    let plainContent: String; let attributedContent: Data?
+    let status: String; let tags: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
-        case title; case plainContent = "plain_content"; case status, tags
+        case title; case plainContent = "plain_content"
+        case attributedContent = "attributed_content"; case status, tags
     }
 }
 
 private struct GeneralNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
-    let plainContent: String; let tags: [String]
+    let plainContent: String; let attributedContent: Data?
+    let tags: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
-        case title; case plainContent = "plain_content"; case tags
+        case title; case plainContent = "plain_content"
+        case attributedContent = "attributed_content"; case tags
     }
 }

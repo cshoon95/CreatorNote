@@ -7,6 +7,8 @@ enum SponsorshipStatus: String, Codable, CaseIterable {
     case pendingSettlement = "정산 대기"
     case completed = "완료"
 
+    var displayName: String { rawValue }
+
     var icon: String {
         switch self {
         case .preSubmit: return "doc.badge.clock"

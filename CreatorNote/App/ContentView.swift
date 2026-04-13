@@ -29,15 +29,15 @@ struct ContentView: View {
                 Group {
                     switch tab {
                     case .home:
-                        DashboardView()
+                        DashboardView().withBannerAd()
                     case .sponsorship:
-                        SponsorshipListView()
+                        SponsorshipListView().withBannerAd()
                     case .settlement:
-                        SettlementListView()
+                        SettlementListView().withBannerAd()
                     case .calendar:
-                        SponsorshipCalendarView()
+                        SponsorshipCalendarView().withBannerAd()
                     case .notes:
-                        NotesTabView()
+                        NotesTabView().withBannerAd()
                     }
                 }
                 .tabItem {

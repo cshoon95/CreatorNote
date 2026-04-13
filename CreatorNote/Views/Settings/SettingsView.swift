@@ -19,7 +19,7 @@ struct SettingsView: View {
         .background(theme.surfaceBackground.ignoresSafeArea())
         .navigationTitle("설정")
         .navigationBarTitleDisplayMode(.inline)
-        .preferredColorScheme(theme.colorScheme)
+        .preferredColorScheme(themeManager.resolvedColorScheme)
     }
 
     private func profileHeroCard(theme: AppTheme) -> some View {
@@ -138,6 +138,23 @@ struct SettingsView: View {
                     .foregroundStyle(theme.textPrimary)
             }
 
+            Button {
+                themeManager.toggleFollowSystem()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: themeManager.followSystem ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(themeManager.followSystem ? theme.primary : theme.textSecondary)
+                    Text("시스템 설정 따라가기")
+                        .font(.system(.subheadline, design: .rounded))
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer()
+                }
+                .padding(12)
+                .background(themeManager.followSystem ? theme.primary.opacity(0.08) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -235,7 +252,7 @@ struct SettingsView: View {
 
             Spacer()
 
-            Text("v1.0.0")
+            Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(theme.textSecondary.opacity(0.7))
                 .padding(.horizontal, 10)

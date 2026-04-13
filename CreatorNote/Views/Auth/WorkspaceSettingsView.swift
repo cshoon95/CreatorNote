@@ -6,6 +6,9 @@ struct WorkspaceSettingsView: View {
     @State private var isGenerating = false
     @State private var showLeaveAlert = false
     @State private var copied = false
+    @State private var inviteInput = ""
+    @State private var isJoining = false
+    @State private var joinResult: String?
 
     var body: some View {
         let theme = themeManager.theme
@@ -96,6 +99,48 @@ struct WorkspaceSettingsView: View {
                         }
                     }
                     .disabled(isGenerating)
+                }
+            }
+
+            // 초대코드 입력
+            Section("초대코드로 참여") {
+                HStack(spacing: 10) {
+                    TextField("초대코드 입력", text: $inviteInput)
+                        .font(.system(.body, design: .monospaced))
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .foregroundStyle(theme.textPrimary)
+
+                    Button {
+                        let code = inviteInput.trimmingCharacters(in: .whitespaces)
+                        guard !code.isEmpty else { return }
+                        Task {
+                            isJoining = true
+                            let success = await WorkspaceManager.shared.joinWithCode(code)
+                            joinResult = success ? "참여 완료!" : "유효하지 않은 코드입니다"
+                            isJoining = false
+                            if success { inviteInput = "" }
+                        }
+                    } label: {
+                        if isJoining {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Text("참여")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(inviteInput.isEmpty ? Color.gray : theme.primary)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .disabled(inviteInput.trimmingCharacters(in: .whitespaces).isEmpty || isJoining)
+                }
+
+                if let result = joinResult {
+                    Text(result)
+                        .font(.caption)
+                        .foregroundStyle(result.contains("완료") ? .green : .red)
                 }
             }
 

@@ -25,6 +25,20 @@ struct SettlementFormView: View {
     private var parsedAmount: Double { Double(amountText.filter { $0.isNumber }) ?? 0 }
     private var parsedFee: Double { Double(feeText.filter { $0.isNumber }) ?? 0 }
     private var parsedTax: Double { Double(taxText.filter { $0.isNumber }) ?? 0 }
+
+    private static let numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.groupingSeparator = ","
+        return f
+    }()
+
+    private func formatCurrency(_ text: String) -> String {
+        let digits = text.filter { $0.isNumber }
+        guard let number = Int(digits), number > 0 else { return "" }
+        let formatted = Self.numberFormatter.string(from: NSNumber(value: number)) ?? digits
+        return formatted + "원"
+    }
     private var netAmount: Double { parsedAmount - parsedFee - parsedTax }
 
     private var canSave: Bool {
@@ -53,16 +67,14 @@ struct SettlementFormView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(theme.textSecondary)
                                         .frame(width: 60, alignment: .leading)
-                                    HStack(spacing: 4) {
-                                        TextField("0", text: $amountText)
-                                            .keyboardType(.numberPad)
-                                            .focused($focusedField, equals: .amount)
-                                            .foregroundStyle(theme.textPrimary)
-                                            .onChange(of: amountText) { _, new in
-                                                let digits = new.filter { $0.isNumber }
-                                                if digits != new { amountText = digits }
-                                            }
-                                    }
+                                    TextField("0원", text: $amountText)
+                                        .keyboardType(.numberPad)
+                                        .focused($focusedField, equals: .amount)
+                                        .foregroundStyle(theme.textPrimary)
+                                        .onChange(of: amountText) { _, new in
+                                            let formatted = formatCurrency(new)
+                                            if formatted != new { amountText = formatted }
+                                        }
                                 }
                             }
                             Divider()
@@ -74,16 +86,14 @@ struct SettlementFormView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(theme.textSecondary)
                                         .frame(width: 60, alignment: .leading)
-                                    HStack(spacing: 4) {
-                                        TextField("0", text: $feeText)
-                                            .keyboardType(.numberPad)
-                                            .focused($focusedField, equals: .fee)
-                                            .foregroundStyle(theme.textPrimary)
-                                            .onChange(of: feeText) { _, new in
-                                                let digits = new.filter { $0.isNumber }
-                                                if digits != new { feeText = digits }
-                                            }
-                                    }
+                                    TextField("0원", text: $feeText)
+                                        .keyboardType(.numberPad)
+                                        .focused($focusedField, equals: .fee)
+                                        .foregroundStyle(theme.textPrimary)
+                                        .onChange(of: feeText) { _, new in
+                                            let formatted = formatCurrency(new)
+                                            if formatted != new { feeText = formatted }
+                                        }
                                 }
                             }
                             Divider()
@@ -95,16 +105,14 @@ struct SettlementFormView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(theme.textSecondary)
                                         .frame(width: 60, alignment: .leading)
-                                    HStack(spacing: 4) {
-                                        TextField("0", text: $taxText)
-                                            .keyboardType(.numberPad)
-                                            .focused($focusedField, equals: .tax)
-                                            .foregroundStyle(theme.textPrimary)
-                                            .onChange(of: taxText) { _, new in
-                                                let digits = new.filter { $0.isNumber }
-                                                if digits != new { taxText = digits }
-                                            }
-                                    }
+                                    TextField("0원", text: $taxText)
+                                        .keyboardType(.numberPad)
+                                        .focused($focusedField, equals: .tax)
+                                        .foregroundStyle(theme.textPrimary)
+                                        .onChange(of: taxText) { _, new in
+                                            let formatted = formatCurrency(new)
+                                            if formatted != new { taxText = formatted }
+                                        }
                                 }
                             }
                         }
@@ -246,9 +254,9 @@ struct SettlementFormView: View {
     private func loadIfEditing() {
         guard let s = editingSettlement else { return }
         brandName = s.brandName
-        if s.amount > 0 { amountText = String(Int(s.amount)) }
-        if s.fee > 0 { feeText = String(Int(s.fee)) }
-        if s.tax > 0 { taxText = String(Int(s.tax)) }
+        if s.amount > 0 { amountText = formatCurrency(String(Int(s.amount))) }
+        if s.fee > 0 { feeText = formatCurrency(String(Int(s.fee))) }
+        if s.tax > 0 { taxText = formatCurrency(String(Int(s.tax))) }
         hasSettlementDate = s.settlementDate != nil
         settlementDate = s.settlementDate ?? Date()
         isPaid = s.isPaid

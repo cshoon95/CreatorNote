@@ -5,27 +5,33 @@ struct SponsorshipCalendarView: View {
     @State private var selectedDate = Date()
     @State private var currentMonth = Date()
     @State private var showingAddSheet = false
+    @State private var showExportAlert = false
+    @State private var exportMessage = ""
 
     private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
     private var calendar: Calendar { Calendar.current }
 
     private var daysInMonth: [Date] {
-        guard let range = calendar.range(of: .day, in: .month, for: currentMonth) else { return [] }
-        let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
+        guard let range = calendar.range(of: .day, in: .month, for: currentMonth),
+              let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth)) else { return [] }
         return range.compactMap { day in
             calendar.date(byAdding: .day, value: day - 1, to: firstDay)
         }
     }
 
     private var firstWeekday: Int {
-        let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth))!
+        guard let firstDay = calendar.date(from: calendar.dateComponents([.year, .month], from: currentMonth)) else { return 0 }
         return (calendar.component(.weekday, from: firstDay) + 5) % 7
     }
 
+    private static let monthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy년 M월"
+        return f
+    }()
+
     private var monthTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy년 M월"
-        return formatter.string(from: currentMonth)
+        Self.monthFormatter.string(from: currentMonth)
     }
 
     private func sponsorshipsFor(date: Date) -> [SponsorshipDTO] {
@@ -54,8 +60,6 @@ struct SponsorshipCalendarView: View {
                                 .font(.body.bold())
                                 .foregroundStyle(theme.primary)
                                 .frame(width: 36, height: 36)
-                                .background(theme.surfaceBackground)
-                                .clipShape(Circle())
                         }
                         Spacer()
                         VStack(spacing: 2) {
@@ -72,8 +76,6 @@ struct SponsorshipCalendarView: View {
                                 .font(.body.bold())
                                 .foregroundStyle(theme.primary)
                                 .frame(width: 36, height: 36)
-                                .background(theme.surfaceBackground)
-                                .clipShape(Circle())
                         }
                     }
                     .padding(.horizontal)
@@ -217,23 +219,45 @@ struct SponsorshipCalendarView: View {
 
             Button { showingAddSheet = true } label: {
                 Image(systemName: "plus")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: theme.gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .font(.title3)
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 52, height: 52)
+                    .background(theme.cardBackground)
                     .clipShape(Circle())
-                    .shadow(color: theme.primary.opacity(0.35), radius: 10, y: 5)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
+                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
             }
             .padding(20)
 
             } // ZStack
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task {
+                            let active = sponsorships.filter { !$0.isExpired }
+                            if active.isEmpty {
+                                exportMessage = "내보낼 협찬이 없습니다"
+                                showExportAlert = true
+                                return
+                            }
+                            let count = await CalendarExportHelper.exportAll(sponsorships: active)
+                            exportMessage = count > 0
+                                ? "\(count)건의 협찬이 캘린더에 추가되었습니다"
+                                : "캘린더 접근 권한이 필요합니다"
+                            showExportAlert = true
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundStyle(theme.primary)
+                    }
+                }
+            }
+            .alert("캘린더 내보내기", isPresented: $showExportAlert) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text(exportMessage)
+            }
             .refreshable {
                 await DataManager.shared.fetchSponsorships()
             }

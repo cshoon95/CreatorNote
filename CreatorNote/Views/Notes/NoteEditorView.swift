@@ -21,6 +21,8 @@ struct NoteEditorView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var editorCoordinator = RichTextCoordinator()
+    @State private var showTemplateSheet = false
+    @State private var isNewNote = false
 
     init(reelsNote: ReelsNoteDTO? = nil) {
         self.mode = .reels(reelsNote)
@@ -38,39 +40,52 @@ struct NoteEditorView: View {
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
-            VStack(spacing: 0) {
-                TextField("제목을 입력하세요", text: $title)
-                    .font(.title2.bold())
-                    .foregroundStyle(theme.textPrimary)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
+            GeometryReader { geometry in
+                VStack(spacing: 0) {
+                    // Title field
+                    TextField("제목을 입력하세요", text: $title)
+                        .font(.title2.bold())
+                        .foregroundStyle(theme.textPrimary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 20)
+                        .padding(.bottom, 12)
 
-                if isReelsMode {
-                    reelsControls(theme: theme)
+                    if isReelsMode {
+                        reelsControls(theme: theme)
+                    }
+
+                    Rectangle()
+                        .fill(theme.divider)
+                        .frame(height: 1)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 4)
+
+                    RichTextEditor(
+                        attributedText: $attributedContent,
+                        plainText: $plainContent,
+                        accentColor: UIColor(theme.primary),
+                        coordinator: editorCoordinator
+                    )
+
+                    Rectangle()
+                        .fill(theme.divider)
+                        .frame(height: 1)
+
+                    FormattingToolbar(coordinator: editorCoordinator)
+                        .safeAreaPadding(.bottom)
                 }
-
-                Divider()
-                    .padding(.horizontal, 16)
-
-                RichTextEditor(
-                    attributedText: $attributedContent,
-                    plainText: $plainContent,
-                    accentColor: UIColor(theme.primary),
-                    coordinator: editorCoordinator
-                )
-
-                Divider()
-
-                FormattingToolbar(coordinator: editorCoordinator)
-                    .safeAreaPadding(.bottom)
+                .frame(width: geometry.size.width, height: geometry.size.height)
             }
             .background(theme.background)
             .navigationTitle(isReelsMode ? "릴스 노트" : "메모")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("취소") { dismiss() }
+                    Button("취소") {
+                        dismiss()
+                    }
+                    .font(.body)
+                    .foregroundStyle(theme.textSecondary)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -78,17 +93,37 @@ struct NoteEditorView: View {
                         Task { await save() }
                     } label: {
                         if isSaving {
-                            ProgressView().scaleEffect(0.85)
+                            ProgressView()
+                                .scaleEffect(0.85)
                         } else {
                             Text("저장")
-                                .fontWeight(.bold)
+                                .font(.body.bold())
                                 .foregroundStyle(theme.primary)
                         }
                     }
                     .disabled(isSaving)
                 }
             }
-            .onAppear { loadContent() }
+            .onAppear {
+                loadContent()
+                if case .reels(let note) = mode, note == nil {
+                    isNewNote = true
+                    showTemplateSheet = true
+                }
+            }
+            .sheet(isPresented: $showTemplateSheet) {
+                NoteTemplateSheet { content, titlePlaceholder in
+                    if !titlePlaceholder.isEmpty && title.isEmpty {
+                        title = titlePlaceholder
+                    }
+                    if !content.isEmpty {
+                        plainContent = content
+                        attributedContent = NSAttributedString(string: content)
+                        editorCoordinator.replaceText(content)
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
             .alert("오류", isPresented: $showError) {
                 Button("확인", role: .cancel) {}
             } message: {
@@ -99,71 +134,76 @@ struct NoteEditorView: View {
 
     @ViewBuilder
     private func reelsControls(theme: AppTheme) -> some View {
+        // Status chips
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 16) {
                 ForEach(ReelsNoteStatus.allCases, id: \.self) { s in
                     Button {
                         Haptic.selection()
                         withAnimation(.spring(duration: 0.3)) { status = s }
                     } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: s.icon)
-                                .font(.caption2)
+                        VStack(spacing: 4) {
                             Text(s.displayName)
-                                .font(.caption.bold())
+                                .font(.caption)
+                                .fontWeight(status == s ? .bold : .regular)
+                                .foregroundStyle(status == s ? theme.primary : theme.textSecondary)
+                            Rectangle()
+                                .fill(status == s ? theme.primary : .clear)
+                                .frame(height: 2)
+                                .clipShape(Capsule())
                         }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(status == s ? theme.primary : theme.surfaceBackground)
-                        .foregroundStyle(status == s ? .white : theme.textSecondary)
-                        .clipShape(Capsule())
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
         }
         .padding(.bottom, 8)
 
+        // Tag row
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 ForEach(tags, id: \.self) { tag in
-                    HStack(spacing: 4) {
+                    HStack(spacing: 3) {
                         Text("#\(tag)")
                             .font(.caption)
-                            .foregroundStyle(theme.accent)
+                            .foregroundStyle(theme.textSecondary)
                         Button {
-                            withAnimation { tags.removeAll { $0 == tag } }
+                            withAnimation(.spring(duration: 0.25)) {
+                                tags.removeAll { $0 == tag }
+                            }
                         } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.caption2)
-                                .foregroundStyle(theme.textSecondary)
+                            Image(systemName: "xmark")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(theme.textSecondary.opacity(0.6))
                         }
+                        .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(theme.surfaceBackground)
-                    .clipShape(Capsule())
                     .transition(.scale.combined(with: .opacity))
                 }
 
-                TextField("태그 추가", text: $tagInput)
-                    .font(.caption)
-                    .frame(width: 80)
-                    .onSubmit {
-                        let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty && !tags.contains(trimmed) {
-                            withAnimation(.spring(duration: 0.3)) {
-                                tags.append(trimmed)
+                HStack(spacing: 3) {
+                    Text("#")
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary.opacity(0.5))
+                    TextField("태그 추가", text: $tagInput)
+                        .font(.caption)
+                        .frame(width: 72)
+                        .foregroundStyle(theme.textPrimary)
+                        .onSubmit {
+                            let trimmed = tagInput.trimmingCharacters(in: .whitespaces)
+                            if !trimmed.isEmpty && !tags.contains(trimmed) {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    tags.append(trimmed)
+                                }
                             }
+                            tagInput = ""
                         }
-                        tagInput = ""
-                    }
+                }
             }
-            .padding(.horizontal, 16)
-            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 20)
         }
-        .padding(.bottom, 4)
+        .padding(.bottom, 12)
     }
 
     private func loadContent() {
@@ -211,17 +251,13 @@ struct NoteEditorView: View {
                 updated.updatedAt = .now
                 await DataManager.shared.updateReelsNote(updated)
             } else {
-                if let created = await DataManager.shared.createReelsNote(
+                _ = await DataManager.shared.createReelsNote(
                     title: title,
                     plainContent: plainContent,
+                    attributedContent: rtfData,
                     status: status,
                     tags: tags
-                ) {
-                    // attributedContent is stored separately if needed
-                    var note = created
-                    note.attributedContent = rtfData
-                    await DataManager.shared.updateReelsNote(note)
-                }
+                )
             }
         case .general(let existing):
             if var updated = existing {
@@ -231,14 +267,11 @@ struct NoteEditorView: View {
                 updated.updatedAt = .now
                 await DataManager.shared.updateGeneralNote(updated)
             } else {
-                if let created = await DataManager.shared.createGeneralNote(
+                _ = await DataManager.shared.createGeneralNote(
                     title: title,
-                    plainContent: plainContent
-                ) {
-                    var note = created
-                    note.attributedContent = rtfData
-                    await DataManager.shared.updateGeneralNote(note)
-                }
+                    plainContent: plainContent,
+                    attributedContent: rtfData
+                )
             }
         }
 

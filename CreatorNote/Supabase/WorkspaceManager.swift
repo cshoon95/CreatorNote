@@ -79,7 +79,7 @@ final class WorkspaceManager {
     func generateInviteCode() async -> String? {
         guard let workspace = currentWorkspace,
               let userId = AuthManager.shared.currentUser?.id else { return nil }
-        let code = String((0..<6).map { _ in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement()! })
+        let code = String((0..<6).map { _ in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement() ?? Character("A") })
         do {
             let invite = InviteCodeInsert(
                 workspaceId: workspace.id, code: code, createdBy: userId,

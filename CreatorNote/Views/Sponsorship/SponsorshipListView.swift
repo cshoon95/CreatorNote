@@ -41,8 +41,8 @@ struct SponsorshipListView: View {
                             }
                         }
                         .padding(14)
-                        .background(theme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .background(theme.surfaceBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
                         .padding(.top, 8)
                         .padding(.bottom, 12)
@@ -79,21 +79,16 @@ struct SponsorshipListView: View {
                 .refreshable { await DataManager.shared.fetchSponsorships() }
 
                 Button { showingAddSheet = true } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                            .font(.body.bold())
-                        Text("협찬 추가")
-                            .font(.subheadline.bold())
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    .background(LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing))
-                    .clipShape(Capsule())
-                    .shadow(color: theme.primary.opacity(0.4), radius: 12, y: 4)
+                    Image(systemName: "plus")
+                        .font(.title3)
+                        .foregroundStyle(theme.primary)
+                        .frame(width: 52, height: 52)
+                        .background(theme.cardBackground)
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
+                        .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(20)
             }
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingAddSheet) { SponsorshipFormView() }
@@ -144,8 +139,8 @@ struct SponsorshipListView: View {
         }
         .padding(18)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(theme.divider, lineWidth: 0.5))
     }
 
     private func filterChip(_ label: String, count: Int, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
@@ -153,25 +148,20 @@ struct SponsorshipListView: View {
             Haptic.selection()
             withAnimation(.spring(duration: 0.25)) { action() }
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 3) {
                 Text(label)
-                    .font(.caption.bold())
+                    .font(.caption)
+                    .fontWeight(isSelected ? .bold : .regular)
                 if count > 0 {
                     Text("\(count)")
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(isSelected ? .white.opacity(0.3) : theme.primary.opacity(0.15))
-                        .clipShape(Capsule())
+                        .font(.caption2)
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(isSelected ? theme.primary : theme.cardBackground)
-            .foregroundStyle(isSelected ? .white : theme.textSecondary)
-            .clipShape(Capsule())
-            .shadow(color: isSelected ? theme.primary.opacity(0.3) : .clear, radius: 6, y: 2)
+            .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 6)
         }
+        .buttonStyle(.plain)
     }
 
     private func emptyState(theme: AppTheme) -> some View {

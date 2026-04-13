@@ -9,6 +9,8 @@ struct ProfileView: View {
     @State private var isLoading = false
     @State private var isSigningOut = false
     @State private var showSignOutConfirmation = false
+    @State private var showDeleteConfirmation = false
+    @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var showError = false
 
@@ -24,6 +26,9 @@ struct ProfileView: View {
 
                 // Sign Out
                 signOutSection(theme: theme)
+
+                // Delete Account
+                deleteAccountSection(theme: theme)
             }
             .padding()
         }
@@ -46,6 +51,18 @@ struct ProfileView: View {
             Button("확인", role: .cancel) { }
         } message: {
             Text(errorMessage ?? "알 수 없는 오류가 발생했습니다.")
+        }
+        .confirmationDialog(
+            "계정 탈퇴",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("탈퇴하기", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("취소", role: .cancel) { }
+        } message: {
+            Text("계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?")
         }
         .task {
             await loadProfile()
@@ -172,10 +189,33 @@ struct ProfileView: View {
         .padding(.top, 8)
     }
 
+    @ViewBuilder
+    private func deleteAccountSection(theme: AppTheme) -> some View {
+        Button {
+            showDeleteConfirmation = true
+        } label: {
+            HStack(spacing: 8) {
+                if isDeleting {
+                    ProgressView()
+                        .tint(theme.textSecondary)
+                        .scaleEffect(0.8)
+                }
+                Text("계정 탈퇴")
+                    .font(.system(.caption, design: .rounded))
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(theme.textSecondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .disabled(isDeleting)
+    }
+
     // MARK: - Helpers
 
     private var providerDisplayName: String {
         switch provider.lowercased() {
+        case "apple": return "Apple"
         case "kakao": return "카카오"
         case "google": return "구글"
         case "naver": return "네이버"
@@ -201,5 +241,11 @@ struct ProfileView: View {
         isSigningOut = true
         defer { isSigningOut = false }
         await AuthManager.shared.signOut()
+    }
+
+    private func deleteAccount() async {
+        isDeleting = true
+        defer { isDeleting = false }
+        await AuthManager.shared.deleteAccount()
     }
 }

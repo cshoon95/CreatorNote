@@ -69,6 +69,12 @@ final class RichTextCoordinator {
         textView.selectedRange = NSRange(location: max(0, min(range.location + cursorOffset, mutable.length)), length: 0)
     }
 
+    func replaceText(_ text: String) {
+        guard let textView else { return }
+        textView.text = text
+        textView.selectedRange = NSRange(location: 0, length: 0)
+    }
+
     func dismissKeyboard() {
         textView?.resignFirstResponder()
     }
@@ -109,17 +115,22 @@ struct RichTextEditor: UIViewRepresentable {
         textView.backgroundColor = .clear
         textView.allowsEditingTextAttributes = true
         textView.tintColor = accentColor
+        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textView.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         if attributedText.length > 0 {
             textView.attributedText = attributedText
         }
 
-        // Store reference for SwiftUI toolbar actions
-        Task { @MainActor in
-            coordinator.textView = textView
-        }
+        coordinator.textView = textView
 
         return textView
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        guard let width = proposal.width else { return nil }
+        let height = proposal.height ?? uiView.contentSize.height
+        return CGSize(width: width, height: max(height, 44))
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
@@ -162,30 +173,33 @@ struct FormattingToolbar: View {
     var body: some View {
         let theme = themeManager.theme
         HStack(spacing: 0) {
-            Group {
-                toolbarButton(icon: "bold") { coordinator.toggleBold() }
-                toolbarButton(icon: "italic") { coordinator.toggleItalic() }
-                toolbarButton(icon: "underline") { coordinator.toggleUnderline() }
-                toolbarButton(icon: "strikethrough") { coordinator.toggleStrikethrough() }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    toolbarButton(icon: "bold") { coordinator.toggleBold() }
+                    toolbarButton(icon: "italic") { coordinator.toggleItalic() }
+                    toolbarButton(icon: "underline") { coordinator.toggleUnderline() }
+                    toolbarButton(icon: "strikethrough") { coordinator.toggleStrikethrough() }
+
+                    Rectangle()
+                        .fill(theme.divider)
+                        .frame(width: 1, height: 20)
+                        .padding(.horizontal, 6)
+
+                    toolbarButton(icon: "textformat.size") { coordinator.cycleHeading() }
+                    toolbarButton(icon: "list.bullet") { coordinator.toggleBullet() }
+                }
+                .padding(.horizontal, 16)
             }
 
-            Spacer()
-
-            Group {
-                toolbarButton(icon: "textformat.size") { coordinator.cycleHeading() }
-                toolbarButton(icon: "list.bullet") { coordinator.toggleBullet() }
-            }
-
-            Spacer()
+            Spacer(minLength: 8)
 
             Button("완료") {
                 coordinator.dismissKeyboard()
             }
             .font(.subheadline.bold())
             .foregroundStyle(theme.primary)
-            .padding(.trailing, 8)
+            .padding(.trailing, 16)
         }
-        .padding(.horizontal, 8)
         .padding(.vertical, 10)
         .background(theme.surfaceBackground)
     }

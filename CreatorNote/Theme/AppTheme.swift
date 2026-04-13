@@ -7,6 +7,8 @@ enum AppThemeType: String, CaseIterable, Identifiable {
     case mint = "민트"
     case sunset = "선셋"
     case midnight = "미드나잇"
+    case pastel = "파스텔"
+    case clean = "클린"
 
     var id: String { rawValue }
 
@@ -20,6 +22,8 @@ enum AppThemeType: String, CaseIterable, Identifiable {
         case .mint: return "leaf.fill"
         case .sunset: return "sun.horizon.fill"
         case .midnight: return "moon.stars.fill"
+        case .pastel: return "cloud.fill"
+        case .clean: return "square.stack.fill"
         }
     }
 }
@@ -146,6 +150,40 @@ struct AppTheme {
                 warning: Color(red: 1, green: 0.7, blue: 0.2),
                 danger: Color(red: 1, green: 0.35, blue: 0.35),
                 divider: Color.primary.opacity(0.12)
+            )
+        case .pastel:
+            return AppTheme(
+                type: .pastel,
+                primary: Color(hex: "A78BFA"),
+                secondary: Color(hex: "F9A8D4"),
+                accent: Color(hex: "67E8F9"),
+                background: Color(hex: "FFFFFF"),
+                surfaceBackground: Color(hex: "F8F7FF"),
+                cardBackground: Color(hex: "FFFFFF"),
+                textPrimary: Color(hex: "374151"),
+                textSecondary: Color(hex: "9CA3AF"),
+                gradient: [Color(hex: "A78BFA"), Color(hex: "F9A8D4")],
+                success: Color(hex: "6EE7B7"),
+                warning: Color(hex: "FCD34D"),
+                danger: Color(hex: "FCA5A5"),
+                divider: Color(hex: "E5E7EB")
+            )
+        case .clean:
+            return AppTheme(
+                type: .clean,
+                primary: Color(hex: "0095F6"),
+                secondary: Color(hex: "00376B"),
+                accent: Color(hex: "FF3040"),
+                background: Color(hex: "FFFFFF"),
+                surfaceBackground: Color(hex: "FAFAFA"),
+                cardBackground: Color(hex: "FFFFFF"),
+                textPrimary: Color(hex: "262626"),
+                textSecondary: Color(hex: "8E8E8E"),
+                gradient: [Color(hex: "515BD4"), Color(hex: "DD2A7B"), Color(hex: "F58529")],
+                success: Color(hex: "58C322"),
+                warning: Color(hex: "FFBB00"),
+                danger: Color(hex: "ED4956"),
+                divider: Color(hex: "DBDBDB")
             )
         }
     }

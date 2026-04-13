@@ -5,6 +5,7 @@ struct GeneralNoteListView: View {
     @State private var showingEditor = false
     @State private var selectedNote: GeneralNoteDTO?
     @State private var searchText = ""
+    @State private var noteToDelete: GeneralNoteDTO?
 
     private var notes: [GeneralNoteDTO] { DataManager.shared.generalNotes }
 
@@ -37,7 +38,7 @@ struct GeneralNoteListView: View {
                     }
                 }
                 .padding(14)
-                .background(theme.cardBackground)
+                .background(theme.surfaceBackground)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -72,23 +73,32 @@ struct GeneralNoteListView: View {
                 showingEditor = true
             } label: {
                 Image(systemName: "plus")
-                    .font(.title2.bold())
-                    .foregroundStyle(.white)
-                    .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(
-                            colors: theme.gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .font(.title3)
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 52, height: 52)
+                    .background(theme.cardBackground)
                     .clipShape(Circle())
-                    .shadow(color: theme.primary.opacity(0.35), radius: 10, y: 5)
+                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
+                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
             }
             .padding(20)
         }
         .sheet(isPresented: $showingEditor) {
             NoteEditorView(generalNote: selectedNote)
+        }
+        .alert("메모를 삭제할까요?", isPresented: Binding(
+            get: { noteToDelete != nil },
+            set: { if !$0 { noteToDelete = nil } }
+        )) {
+            Button("취소", role: .cancel) { noteToDelete = nil }
+            Button("삭제", role: .destructive) {
+                if let note = noteToDelete {
+                    Task { await DataManager.shared.deleteGeneralNote(id: note.id) }
+                    noteToDelete = nil
+                }
+            }
+        } message: {
+            Text("삭제된 메모는 복구할 수 없습니다")
         }
     }
 
@@ -123,17 +133,11 @@ struct GeneralNoteListView: View {
                 }
 
                 if !note.tags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(note.tags.prefix(5), id: \.self) { tag in
-                                Text("#\(tag)")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(theme.accent)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(theme.accent.opacity(0.1))
-                                    .clipShape(Capsule())
-                            }
+                    HStack(spacing: 4) {
+                        ForEach(note.tags.prefix(3), id: \.self) { tag in
+                            Text("#\(tag)")
+                                .font(.caption2)
+                                .foregroundStyle(theme.textSecondary)
                         }
                     }
                 }
@@ -142,11 +146,7 @@ struct GeneralNoteListView: View {
                     Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
                         .font(.caption2)
                         .foregroundStyle(theme.textSecondary.opacity(0.7))
-                    if let name = authorName(for: note.createdBy) {
-                        Text("· \(name)")
-                            .font(.caption2)
-                            .foregroundStyle(theme.textSecondary.opacity(0.7))
-                    }
+                    MemberChip(userId: note.createdBy)
                     Spacer()
                 }
             }
@@ -154,9 +154,12 @@ struct GeneralNoteListView: View {
             .padding(.vertical, 14)
         }
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 18))
-        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 3)
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(theme.divider, lineWidth: 0.5)
+        )
+        .contextMenu {
             Button {
                 Task { await togglePin(note) }
             } label: {
@@ -165,22 +168,13 @@ struct GeneralNoteListView: View {
                     systemImage: note.isPinned ? "pin.slash.fill" : "pin.fill"
                 )
             }
-            .tint(theme.primary)
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
-                Task { await DataManager.shared.deleteGeneralNote(id: note.id) }
+                Haptic.warning()
+                noteToDelete = note
             } label: {
                 Label("삭제", systemImage: "trash.fill")
             }
         }
-    }
-
-    private func authorName(for userId: UUID?) -> String? {
-        guard let userId else { return nil }
-        let currentUserId = AuthManager.shared.currentUser?.id
-        if userId == currentUserId { return "나" }
-        return WorkspaceManager.shared.members.first { $0.id == userId }?.displayName
     }
 
     private func emptyState(theme: AppTheme) -> some View {

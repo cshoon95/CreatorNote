@@ -22,6 +22,15 @@ struct DashboardView: View {
     private var totalEarnings: Double {
         sponsorships.filter { $0.sponsorshipStatus == .completed }.reduce(0) { $0 + $1.amount }
     }
+    private var todayDeadlines: [SponsorshipDTO] {
+        sponsorships.filter { Calendar.current.isDateInToday($0.endDate) }
+    }
+    private var urgentItems: [SponsorshipDTO] {
+        sponsorships.filter { $0.daysRemaining <= 3 && $0.daysRemaining >= 0 && !$0.isExpired }
+    }
+    private var draftNotes: [ReelsNoteDTO] {
+        reelsNotes.filter { $0.reelsNoteStatus == .drafting }
+    }
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: .now)
         switch h {
@@ -59,6 +68,10 @@ struct DashboardView: View {
                     }
                     .padding(.horizontal)
 
+                    if !todayDeadlines.isEmpty || !urgentItems.isEmpty || !draftNotes.isEmpty {
+                        todaySection(theme: theme)
+                    }
+
                     if !pendingSettlements.isEmpty {
                         pendingSection(theme: theme)
                     }
@@ -80,6 +93,12 @@ struct DashboardView: View {
             .background(theme.background)
             .refreshable { await DataManager.shared.fetchAll() }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink(destination: GlobalSearchView()) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(theme.primary)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: SettingsView()) {
                         Image(systemName: "gearshape.fill")
@@ -162,6 +181,101 @@ struct DashboardView: View {
         .background(theme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: theme.primary.opacity(0.06), radius: 8, y: 4)
+    }
+
+    private func todaySection(theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("오늘 할 일", systemImage: "checklist")
+                .font(.headline)
+                .foregroundStyle(theme.textPrimary)
+                .padding(.horizontal)
+
+            ForEach(todayDeadlines) { item in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.red.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.red)
+                            }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.brandName)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            Text("오늘 마감!")
+                                .font(.caption.bold())
+                                .foregroundStyle(.red)
+                        }
+                        Spacer()
+                        Text("D-Day")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.red)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(.horizontal)
+            }
+
+            ForEach(urgentItems.filter { urgent in !todayDeadlines.contains(where: { d in d.id == urgent.id }) }) { item in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(Color.orange.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Image(systemName: "clock.badge.exclamationmark")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.orange)
+                            }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.brandName)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            Text("\(item.daysRemaining)일 후 마감")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                        Spacer()
+                        Text("D-\(item.daysRemaining)")
+                            .font(.caption.bold())
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .padding(.horizontal)
+            }
+
+            ForEach(draftNotes.prefix(2)) { note in
+                ThemedCard {
+                    HStack(spacing: 12) {
+                        Circle()
+                            .fill(theme.primary.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Image(systemName: "pencil.circle.fill")
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.primary)
+                            }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.textPrimary)
+                            Text("작성 중인 노트")
+                                .font(.caption)
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                        Spacer()
+                        StatusBadge(status: note.reelsNoteStatus)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
     }
 
     private func pendingSection(theme: AppTheme) -> some View {

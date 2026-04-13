@@ -8,13 +8,21 @@ struct ThemedCard<Content: View>: View {
         self.content = content
     }
 
+    private var isFlat: Bool {
+        themeManager.theme.type == .clean || themeManager.theme.type == .pastel
+    }
+
     var body: some View {
         let theme = themeManager.theme
         content()
             .padding(16)
             .background(theme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: isFlat ? 12 : 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: isFlat ? 12 : 16)
+                    .stroke(theme.divider, lineWidth: isFlat ? 0.5 : 0)
+            )
+            .shadow(color: isFlat ? .clear : theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -66,17 +74,45 @@ struct StatusBadge: View {
         }()
 
         HStack(spacing: 4) {
-            Image(systemName: status.icon)
-                .font(.caption2)
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
             Text(status.displayName)
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.caption2)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(color.opacity(0.15))
         .foregroundStyle(color)
-        .clipShape(Capsule())
+    }
+}
+
+struct MemberChip: View {
+    @Environment(ThemeManager.self) private var themeManager
+    let userId: UUID?
+
+    private var name: String {
+        guard let userId else { return "알 수 없음" }
+        if userId == AuthManager.shared.currentUser?.id { return "나" }
+        return WorkspaceManager.shared.members.first { $0.id == userId }?.displayName ?? "멤버"
+    }
+
+    private var initial: String {
+        String(name.prefix(1))
+    }
+
+    var body: some View {
+        let theme = themeManager.theme
+        HStack(spacing: 3) {
+            Circle()
+                .fill(theme.primary.opacity(0.7))
+                .frame(width: 14, height: 14)
+                .overlay {
+                    Text(initial)
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(.white)
+                }
+            Text(name)
+                .font(.caption2)
+                .foregroundStyle(theme.textSecondary)
+        }
     }
 }
 
@@ -95,17 +131,13 @@ struct SponsorshipStatusBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: status.icon)
-                .font(.caption2)
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
             Text(status.displayName)
-                .font(.caption)
-                .fontWeight(.medium)
+                .font(.caption2)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(color.opacity(0.15))
         .foregroundStyle(color)
-        .clipShape(Capsule())
     }
 }
 
