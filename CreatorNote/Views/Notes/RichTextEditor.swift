@@ -174,7 +174,7 @@ struct FormattingToolbar: View {
         let theme = themeManager.theme
         HStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 4) {
+                HStack(spacing: 2) {
                     toolbarButton(icon: "bold") { coordinator.toggleBold() }
                     toolbarButton(icon: "italic") { coordinator.toggleItalic() }
                     toolbarButton(icon: "underline") { coordinator.toggleUnderline() }
@@ -183,15 +183,18 @@ struct FormattingToolbar: View {
                     Rectangle()
                         .fill(theme.divider)
                         .frame(width: 1, height: 20)
-                        .padding(.horizontal, 6)
+                        .padding(.horizontal, 4)
 
                     toolbarButton(icon: "textformat.size") { coordinator.cycleHeading() }
                     toolbarButton(icon: "list.bullet") { coordinator.toggleBullet() }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
             }
 
-            Spacer(minLength: 8)
+            Rectangle()
+                .fill(theme.divider)
+                .frame(width: 1, height: 20)
+                .padding(.horizontal, 4)
 
             Button("완료") {
                 coordinator.dismissKeyboard()

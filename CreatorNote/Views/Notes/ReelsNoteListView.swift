@@ -3,7 +3,7 @@ import SwiftUI
 struct ReelsNoteListView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var filterStatus: ReelsNoteStatus?
-    @State private var showingEditor = false
+    @State private var showingNewNote = false
     @State private var selectedNote: ReelsNoteDTO?
     @State private var searchText = ""
     @State private var noteToDelete: ReelsNoteDTO?
@@ -131,7 +131,6 @@ struct ReelsNoteListView: View {
                                     .onTapGesture {
                                         Haptic.selection()
                                         selectedNote = note
-                                        showingEditor = true
                                     }
                             }
                         }
@@ -145,8 +144,7 @@ struct ReelsNoteListView: View {
 
             // FAB
             Button {
-                selectedNote = nil
-                showingEditor = true
+                showingNewNote = true
             } label: {
                 Image(systemName: "plus")
                     .font(.title3)
@@ -159,8 +157,11 @@ struct ReelsNoteListView: View {
             }
             .padding(20)
         }
-        .sheet(isPresented: $showingEditor) {
-            NoteEditorView(reelsNote: selectedNote)
+        .sheet(item: $selectedNote) { note in
+            NoteEditorView(reelsNote: note)
+        }
+        .sheet(isPresented: $showingNewNote) {
+            NoteEditorView(reelsNote: nil)
         }
         .alert("노트를 삭제할까요?", isPresented: Binding(
             get: { noteToDelete != nil },

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct GeneralNoteListView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @State private var showingEditor = false
+    @State private var showingNewNote = false
     @State private var selectedNote: GeneralNoteDTO?
     @State private var searchText = ""
     @State private var noteToDelete: GeneralNoteDTO?
@@ -56,7 +56,6 @@ struct GeneralNoteListView: View {
                                     .onTapGesture {
                                         Haptic.selection()
                                         selectedNote = note
-                                        showingEditor = true
                                     }
                             }
                         }
@@ -69,8 +68,7 @@ struct GeneralNoteListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             Button {
-                selectedNote = nil
-                showingEditor = true
+                showingNewNote = true
             } label: {
                 Image(systemName: "plus")
                     .font(.title3)
@@ -83,8 +81,11 @@ struct GeneralNoteListView: View {
             }
             .padding(20)
         }
-        .sheet(isPresented: $showingEditor) {
-            NoteEditorView(generalNote: selectedNote)
+        .sheet(item: $selectedNote) { note in
+            NoteEditorView(generalNote: note)
+        }
+        .sheet(isPresented: $showingNewNote) {
+            NoteEditorView(generalNote: nil)
         }
         .alert("메모를 삭제할까요?", isPresented: Binding(
             get: { noteToDelete != nil },

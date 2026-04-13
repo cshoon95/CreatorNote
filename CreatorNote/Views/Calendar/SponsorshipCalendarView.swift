@@ -60,7 +60,9 @@ struct SponsorshipCalendarView: View {
                                 .font(.body.bold())
                                 .foregroundStyle(theme.primary)
                                 .frame(width: 36, height: 36)
+                                .contentShape(Circle())
                         }
+                        .buttonStyle(.plain)
                         Spacer()
                         VStack(spacing: 2) {
                             Text(monthTitle)
@@ -76,7 +78,9 @@ struct SponsorshipCalendarView: View {
                                 .font(.body.bold())
                                 .foregroundStyle(theme.primary)
                                 .frame(width: 36, height: 36)
+                                .contentShape(Circle())
                         }
+                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal)
 

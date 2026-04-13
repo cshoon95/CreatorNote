@@ -135,6 +135,7 @@ struct SponsorshipDetailView: View {
                                             .opacity(sponsorship.sponsorshipStatus == s ? 1 : 0.35)
                                             .scaleEffect(sponsorship.sponsorshipStatus == s ? 1.08 : 1)
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             .padding(.vertical, 2)

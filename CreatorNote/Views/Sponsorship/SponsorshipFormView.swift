@@ -112,6 +112,7 @@ struct SponsorshipFormView: View {
                                             .opacity(status == s ? 1 : 0.35)
                                             .scaleEffect(status == s ? 1.08 : 1)
                                     }
+                                    .buttonStyle(.plain)
                                 }
                             }
                             .padding(16)
