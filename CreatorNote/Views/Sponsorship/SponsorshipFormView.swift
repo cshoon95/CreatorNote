@@ -20,6 +20,20 @@ struct SponsorshipFormView: View {
     @FocusState private var focusedField: Field?
     enum Field { case brandName, productName, amount, details }
 
+    private static let numberFormatter: NumberFormatter = {
+        let f = NumberFormatter()
+        f.numberStyle = .decimal
+        f.groupingSeparator = ","
+        return f
+    }()
+
+    private func formatCurrency(_ text: String) -> String {
+        let digits = text.filter { $0.isNumber }
+        guard let number = Int(digits), number > 0 else { return "" }
+        let formatted = Self.numberFormatter.string(from: NSNumber(value: number)) ?? digits
+        return formatted + "원"
+    }
+
     private var parsedAmount: Double {
         Double(amountText.filter { $0.isNumber }) ?? 0
     }
@@ -55,21 +69,14 @@ struct SponsorshipFormView: View {
                     // 금액
                     sectionCard(title: "금액", theme: theme) {
                         rowField(theme: theme) {
-                            HStack(spacing: 6) {
-                                TextField("0", text: $amountText)
-                                    .keyboardType(.numberPad)
-                                    .focused($focusedField, equals: .amount)
-                                    .foregroundStyle(theme.textPrimary)
-                                    .onChange(of: amountText) { _, new in
-                                        let digits = new.filter { $0.isNumber }
-                                        if digits != new { amountText = digits }
-                                    }
-                                if !amountText.isEmpty {
-                                    Text("원")
-                                        .font(.caption)
-                                        .foregroundStyle(theme.textSecondary)
+                            TextField("0원", text: $amountText)
+                                .keyboardType(.numberPad)
+                                .focused($focusedField, equals: .amount)
+                                .foregroundStyle(theme.textPrimary)
+                                .onChange(of: amountText) { _, new in
+                                    let formatted = formatCurrency(new)
+                                    if formatted != new { amountText = formatted }
                                 }
-                            }
                         }
                     }
 
@@ -192,7 +199,7 @@ struct SponsorshipFormView: View {
         productName = s.productName
         details = s.details
         if s.amount > 0 {
-            amountText = String(Int(s.amount))
+            amountText = formatCurrency(String(Int(s.amount)))
         }
         startDate = s.startDate
         endDate = s.endDate

@@ -4,7 +4,7 @@ struct GeneralNoteDTO: Codable, Identifiable, Sendable {
     let id: UUID
     var workspaceId: UUID
     var title: String
-    var attributedContent: Data?
+    var attributedContent: String?
     var plainContent: String
     var tags: [String]
     var isPinned: Bool

@@ -81,7 +81,7 @@ final class AuthManager {
         do {
             try await supabase.auth.signInWithOAuth(
                 provider: .google,
-                redirectTo: URL(string: "creatornote://auth/callback")
+                redirectTo: URL(string: "influe://auth/callback")
             )
             let session = try await supabase.auth.session
             currentUser = session.user

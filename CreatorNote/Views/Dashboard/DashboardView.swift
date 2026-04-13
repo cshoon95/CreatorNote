@@ -45,8 +45,9 @@ struct DashboardView: View {
         let theme = themeManager.theme
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     headerCard(theme: theme)
+                        .padding(.top, 8)
 
                     HStack(spacing: 12) {
                         miniStatCard(
@@ -88,7 +89,7 @@ struct DashboardView: View {
                         emptyState(theme: theme)
                     }
                 }
-                .padding(.bottom, 24)
+                .padding(.bottom, 8)
             }
             .background(theme.background)
             .refreshable { await DataManager.shared.fetchAll() }

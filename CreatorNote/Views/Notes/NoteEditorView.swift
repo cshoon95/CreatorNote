@@ -122,7 +122,7 @@ struct NoteEditorView: View {
                         editorCoordinator.replaceText(content)
                     }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
             }
             .alert("오류", isPresented: $showError) {
                 Button("확인", role: .cancel) {}
@@ -223,8 +223,9 @@ struct NoteEditorView: View {
         }
     }
 
-    private func loadAttributedContent(from data: Data?) {
-        guard let data,
+    private func loadAttributedContent(from base64String: String?) {
+        guard let base64String,
+              let data = Data(base64Encoded: base64String),
               let attr = try? NSAttributedString(data: data, options: [
                   .documentType: NSAttributedString.DocumentType.rtf
               ], documentAttributes: nil) else { return }
@@ -235,17 +236,20 @@ struct NoteEditorView: View {
         isSaving = true
         defer { isSaving = false }
         DataManager.shared.errorMessage = nil
-        let rtfData = try? attributedContent.data(
-            from: NSRange(location: 0, length: attributedContent.length),
-            documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
-        )
+        let rtfBase64: String? = {
+            guard let data = try? attributedContent.data(
+                from: NSRange(location: 0, length: attributedContent.length),
+                documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]
+            ) else { return nil }
+            return data.base64EncodedString()
+        }()
 
         switch mode {
         case .reels(let existing):
             if var updated = existing {
                 updated.title = title
                 updated.plainContent = plainContent
-                updated.attributedContent = rtfData
+                updated.attributedContent = rtfBase64
                 updated.status = status.rawValue
                 updated.tags = tags
                 updated.updatedAt = .now
@@ -254,7 +258,7 @@ struct NoteEditorView: View {
                 _ = await DataManager.shared.createReelsNote(
                     title: title,
                     plainContent: plainContent,
-                    attributedContent: rtfData,
+                    attributedContent: rtfBase64,
                     status: status,
                     tags: tags
                 )
@@ -263,14 +267,14 @@ struct NoteEditorView: View {
             if var updated = existing {
                 updated.title = title
                 updated.plainContent = plainContent
-                updated.attributedContent = rtfData
+                updated.attributedContent = rtfBase64
                 updated.updatedAt = .now
                 await DataManager.shared.updateGeneralNote(updated)
             } else {
                 _ = await DataManager.shared.createGeneralNote(
                     title: title,
                     plainContent: plainContent,
-                    attributedContent: rtfData
+                    attributedContent: rtfBase64
                 )
             }
         }

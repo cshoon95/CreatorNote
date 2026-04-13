@@ -3,10 +3,14 @@ import SwiftUI
 
 struct BannerAdView: UIViewControllerRepresentable {
     let adUnitID = "ca-app-pub-2695730501568915/4015170772"
+    @Binding var isAdLoaded: Bool
 
     func makeUIViewController(context: Context) -> BannerAdViewController {
         let vc = BannerAdViewController()
         vc.adUnitID = adUnitID
+        vc.onAdLoaded = { loaded in
+            isAdLoaded = loaded
+        }
         return vc
     }
 
@@ -15,6 +19,7 @@ struct BannerAdView: UIViewControllerRepresentable {
 
 class BannerAdViewController: UIViewController, GADBannerViewDelegate {
     var adUnitID: String = ""
+    var onAdLoaded: ((Bool) -> Void)?
     private var bannerView: GADBannerView?
 
     override func viewDidLoad() {
@@ -58,6 +63,7 @@ class BannerAdViewController: UIViewController, GADBannerViewDelegate {
 
     nonisolated func bannerViewDidReceiveAd(_ bannerView: GADBannerView) {
         DispatchQueue.main.async {
+            self.onAdLoaded?(true)
             bannerView.alpha = 0
             UIView.animate(withDuration: 0.3) {
                 bannerView.alpha = 1
@@ -66,17 +72,32 @@ class BannerAdViewController: UIViewController, GADBannerViewDelegate {
     }
 
     nonisolated func bannerView(_ bannerView: GADBannerView, didFailToReceiveAdWithError error: Error) {
+        DispatchQueue.main.async {
+            self.onAdLoaded?(false)
+        }
         print("[AdMob] 배너 로드 실패: \(error.localizedDescription)")
     }
 }
 
 struct AdBannerModifier: ViewModifier {
+    @Environment(ThemeManager.self) private var themeManager
+    @State private var isAdLoaded = false
+
     func body(content: Content) -> some View {
         VStack(spacing: 0) {
             content
-            BannerAdView()
-                .frame(height: 50)
+            if isAdLoaded {
+                BannerAdView(isAdLoaded: $isAdLoaded)
+                    .frame(height: 50)
+                    .background(themeManager.theme.background)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else {
+                BannerAdView(isAdLoaded: $isAdLoaded)
+                    .frame(height: 0)
+                    .hidden()
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: isAdLoaded)
     }
 }
 

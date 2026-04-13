@@ -45,7 +45,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>creatornote</string>
+				<string>influe</string>
 			</array>
 			<key>CFBundleURLName</key>
 			<string>com.soohoon.CreatorNote</string>

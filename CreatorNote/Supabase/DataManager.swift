@@ -189,7 +189,7 @@ final class DataManager {
         } catch { showError("릴스 노트를 불러올 수 없습니다") }
     }
 
-    func createReelsNote(title: String = "", plainContent: String = "", attributedContent: Data? = nil, status: ReelsNoteStatus = .drafting, tags: [String] = []) async -> ReelsNoteDTO? {
+    func createReelsNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, status: ReelsNoteStatus = .drafting, tags: [String] = []) async -> ReelsNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
             let dto = ReelsNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, status: status.rawValue, tags: tags)
@@ -198,7 +198,7 @@ final class DataManager {
             reelsNotes.insert(created, at: 0)
             return created
         } catch {
-            showError("릴스 노트 추가에 실패했습니다")
+            showError("릴스 노트 추가에 실패했습니다: \(error.localizedDescription)")
             return nil
         }
     }
@@ -238,7 +238,7 @@ final class DataManager {
         } catch { showError("메모를 불러올 수 없습니다") }
     }
 
-    func createGeneralNote(title: String = "", plainContent: String = "", attributedContent: Data? = nil, tags: [String] = []) async -> GeneralNoteDTO? {
+    func createGeneralNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, tags: [String] = []) async -> GeneralNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
             let dto = GeneralNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, tags: tags)
@@ -247,7 +247,7 @@ final class DataManager {
             generalNotes.insert(created, at: 0)
             return created
         } catch {
-            showError("메모 추가에 실패했습니다")
+            showError("메모 추가에 실패했습니다: \(error.localizedDescription)")
             return nil
         }
     }
@@ -305,7 +305,7 @@ private struct SettlementInsert: Codable {
 
 private struct ReelsNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
-    let plainContent: String; let attributedContent: Data?
+    let plainContent: String; let attributedContent: String?
     let status: String; let tags: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
@@ -316,7 +316,7 @@ private struct ReelsNoteInsert: Codable {
 
 private struct GeneralNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
-    let plainContent: String; let attributedContent: Data?
+    let plainContent: String; let attributedContent: String?
     let tags: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"

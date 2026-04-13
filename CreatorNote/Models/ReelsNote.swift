@@ -1,11 +1,17 @@
 import Foundation
 
 enum ReelsNoteStatus: String, Codable, CaseIterable {
-    case drafting = "작성중"
-    case readyToUpload = "업로드 대기"
-    case uploaded = "업로드 완료"
+    case drafting
+    case readyToUpload
+    case uploaded
 
-    var displayName: String { rawValue }
+    var displayName: String {
+        switch self {
+        case .drafting: return "작성중"
+        case .readyToUpload: return "업로드 대기"
+        case .uploaded: return "업로드 완료"
+        }
+    }
 
     var icon: String {
         switch self {

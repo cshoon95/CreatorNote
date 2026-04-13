@@ -1,13 +1,21 @@
 import Foundation
 
 enum SponsorshipStatus: String, Codable, CaseIterable {
-    case preSubmit = "제출 전"
-    case underReview = "검수중"
-    case submitted = "제출 완료"
-    case pendingSettlement = "정산 대기"
-    case completed = "완료"
+    case preSubmit
+    case underReview
+    case submitted
+    case pendingSettlement
+    case completed
 
-    var displayName: String { rawValue }
+    var displayName: String {
+        switch self {
+        case .preSubmit: return "제출 전"
+        case .underReview: return "검수중"
+        case .submitted: return "제출 완료"
+        case .pendingSettlement: return "정산 대기"
+        case .completed: return "완료"
+        }
+    }
 
     var icon: String {
         switch self {

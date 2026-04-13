@@ -4,7 +4,7 @@ struct ReelsNoteDTO: Codable, Identifiable, Sendable {
     let id: UUID
     var workspaceId: UUID
     var title: String
-    var attributedContent: Data?
+    var attributedContent: String?
     var plainContent: String
     var status: String
     var sponsorshipId: UUID?

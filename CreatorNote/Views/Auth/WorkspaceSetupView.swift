@@ -40,10 +40,12 @@ struct WorkspaceSetupView: View {
                     Text("워크스페이스 설정")
                         .font(.system(.largeTitle, design: .rounded).bold())
                         .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
 
                     Text("함께 사용할 공간을 만들어요")
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
 
                     Spacer().frame(height: 24)
                 }

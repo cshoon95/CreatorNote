@@ -4,7 +4,7 @@ import GoogleMobileAds
 import AppTrackingTransparency
 
 @main
-struct CreatorNoteApp: App {
+struct InflueApp: App {
     @State private var themeManager = ThemeManager.shared
 
     init() {
