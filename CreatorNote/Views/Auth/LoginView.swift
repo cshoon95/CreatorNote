@@ -96,6 +96,7 @@ struct LoginView: View {
                             }
                             .signInWithAppleButtonStyle(.black)
                             .frame(height: 56)
+                            .frame(maxWidth: .infinity)
                             .clipShape(RoundedRectangle(cornerRadius: 20))
                             .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
 
@@ -161,7 +162,6 @@ struct LoginView: View {
                 }
             }
         }
-        .ignoresSafeArea(edges: .bottom)
         .overlay {
             if isLoading {
                 Color.black.opacity(0.2)
@@ -202,8 +202,13 @@ struct LoginView: View {
                 }
             }
         case .failure(let error):
-            if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
-                errorMessage = error.localizedDescription
+            let nsError = error as NSError
+            let ignoredCodes = [
+                ASAuthorizationError.canceled.rawValue,
+                ASAuthorizationError.unknown.rawValue,
+            ]
+            if !ignoredCodes.contains(nsError.code) {
+                errorMessage = "Apple 로그인에 실패했습니다. 다시 시도해주세요."
                 showError = true
             }
         }

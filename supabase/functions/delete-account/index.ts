@@ -19,14 +19,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // User-scoped client to verify the JWT and get user identity
-    const supabaseUser = createClient(
+    const token = authHeader.replace("Bearer ", "");
+
+    // Admin client for privileged operations
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    // Verify the JWT and get user identity via admin client
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: "Invalid or expired token" }),
@@ -35,13 +38,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const userId = user.id;
-
-    // Admin client for privileged operations (delete auth user)
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
 
     // Delete user data in dependency order
     const tables: Array<{ table: string; column: string }> = [

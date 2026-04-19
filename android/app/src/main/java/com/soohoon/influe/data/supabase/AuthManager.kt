@@ -89,6 +89,33 @@ class AuthManager(private val context: Context) {
         }
     }
 
+    suspend fun deleteAccount() {
+        try {
+            val session = supabase.auth.currentSessionOrNull()
+                ?: throw Exception("세션이 없습니다")
+            val accessToken = session.accessToken
+
+            val url = java.net.URL("https://wrnglzfsgoujboyjomuu.supabase.co/functions/v1/delete-account")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            connection.setRequestProperty("Content-Type", "application/json")
+
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) {
+                throw Exception("계정 삭제 실패 (코드: $responseCode)")
+            }
+            connection.disconnect()
+
+            try { supabase.auth.signOut() } catch (_: Exception) {}
+            _isAuthenticated.value = false
+            _currentProfile.value = null
+            context.dataStore.edit { it.clear() }
+        } catch (e: Exception) {
+            _errorMessage.value = e.message ?: "계정 삭제에 실패했습니다"
+        }
+    }
+
     suspend fun fetchProfile() {
         val userId = currentUserId ?: return
         try {

@@ -29,9 +29,7 @@ final class AuthManager {
             await fetchProfile()
             await restoreWorkspace()
         } catch {
-            currentUser = nil
-            currentProfile = nil
-            isAuthenticated = false
+            clearAuthState()
         }
     }
 
@@ -50,10 +48,7 @@ final class AuthManager {
 
         do {
             let session = try await supabase.auth.signInWithIdToken(
-                credentials: .init(
-                    provider: .apple,
-                    idToken: tokenString
-                )
+                credentials: .init(provider: .apple, idToken: tokenString)
             )
             currentUser = session.user
             isAuthenticated = true
@@ -88,6 +83,8 @@ final class AuthManager {
             isAuthenticated = true
             await fetchOrCreateProfile(provider: "google")
             await restoreWorkspace()
+        } catch let error as NSError where error.domain == "com.apple.AuthenticationServices.WebAuthenticationSession" && error.code == 1 {
+            // 사용자가 로그인을 취소한 경우 무시
         } catch {
             errorMessage = "Google 로그인에 실패했습니다: \(error.localizedDescription)"
         }
@@ -101,10 +98,8 @@ final class AuthManager {
 
         do {
             try await supabase.auth.signOut()
-            currentUser = nil
-            currentProfile = nil
-            isAuthenticated = false
-            UserDefaults.standard.removeObject(forKey: "current_workspace_id")
+            clearAuthState()
+            ToastManager.shared.show("로그아웃되었습니다", icon: "rectangle.portrait.and.arrow.right")
         } catch {
             errorMessage = "로그아웃에 실패했습니다: \(error.localizedDescription)"
         }
@@ -112,19 +107,15 @@ final class AuthManager {
 
     // MARK: - Delete Account
 
-    func deleteAccount() async {
+    func deleteAccountData() async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            // Get current session JWT for authorization
-            let session = try await supabase.auth.session
-            let accessToken = session.accessToken
+            let accessToken = try await supabase.auth.session.accessToken
 
-            // Call the Edge Function which handles full account deletion
-            let url = URL(string: "https://wrnglzfsgoujboyjomuu.supabase.co/functions/v1/delete-account")!
-            var request = URLRequest(url: url)
+            var request = URLRequest(url: URL(string: "https://wrnglzfsgoujboyjomuu.supabase.co/functions/v1/delete-account")!)
             request.httpMethod = "POST"
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -132,21 +123,14 @@ final class AuthManager {
             let (data, response) = try await URLSession.shared.data(for: request)
 
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                let body = String(data: data, encoding: .utf8) ?? "Unknown error"
-                errorMessage = "계정 삭제에 실패했습니다: \(body)"
+                errorMessage = "계정 삭제에 실패했습니다: \(String(data: data, encoding: .utf8) ?? "Unknown error")"
                 return
             }
 
-            // Sign out locally after successful server-side deletion
             try? await supabase.auth.signOut()
-
-            currentUser = nil
-            currentProfile = nil
-            isAuthenticated = false
-            UserDefaults.standard.removeObject(forKey: "current_workspace_id")
+            clearAuthState()
             UserDefaults.standard.removeObject(forKey: "hasSeenOnboarding")
 
-            // 로컬 캐시 삭제
             let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("DataCache")
             try? FileManager.default.removeItem(at: cacheDir)
         } catch {
@@ -208,7 +192,14 @@ final class AuthManager {
         }
     }
 
-    // MARK: - Workspace Restore
+    // MARK: - Private
+
+    private func clearAuthState() {
+        currentUser = nil
+        currentProfile = nil
+        isAuthenticated = false
+        UserDefaults.standard.removeObject(forKey: "current_workspace_id")
+    }
 
     private func restoreWorkspace() async {
         if let storedId = UserDefaults.standard.string(forKey: "current_workspace_id"),

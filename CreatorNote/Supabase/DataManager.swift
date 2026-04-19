@@ -93,6 +93,7 @@ final class DataManager {
             let dto = SponsorshipInsert(workspaceId: wid, createdBy: uid, brandName: brandName, productName: productName, details: details, amount: amount, startDate: startDate, endDate: endDate, status: status.rawValue)
             let created: SponsorshipDTO = try await supabase.from("sponsorships").insert(dto).select().single().execute().value
             sponsorships.insert(created, at: 0)
+            ToastManager.shared.show("협찬이 등록되었습니다")
         } catch {
             showError("협찬 추가 실패: \(error.localizedDescription)")
         }
@@ -106,6 +107,7 @@ final class DataManager {
         }
         do {
             try await supabase.from("sponsorships").update(item).eq("id", value: item.id.uuidString).execute()
+            ToastManager.shared.show("협찬이 수정되었습니다")
             // 정산 대기 → 완료 전환 시 정산 항목 자동 생성
             if previous?.sponsorshipStatus == .pendingSettlement && item.sponsorshipStatus == .completed {
                 await createSettlement(
@@ -128,6 +130,7 @@ final class DataManager {
         sponsorships.removeAll { $0.id == id }
         do {
             try await supabase.from("sponsorships").delete().eq("id", value: id.uuidString).execute()
+            ToastManager.shared.show("협찬이 삭제되었습니다", icon: "trash.fill")
         } catch {
             sponsorships = backup
             showError("삭제에 실패했습니다")
@@ -151,6 +154,7 @@ final class DataManager {
             let dto = SettlementInsert(workspaceId: wid, createdBy: uid, brandName: brandName, amount: amount, fee: fee, tax: tax, settlementDate: settlementDate, isPaid: isPaid, memo: memo, sponsorshipId: sponsorshipId)
             let created: SettlementDTO = try await supabase.from("settlements").insert(dto).select().single().execute().value
             settlements.insert(created, at: 0)
+            ToastManager.shared.show("정산이 등록되었습니다")
         } catch { showError("정산 추가에 실패했습니다: \(error.localizedDescription)") }
     }
 
@@ -161,6 +165,7 @@ final class DataManager {
         }
         do {
             try await supabase.from("settlements").update(item).eq("id", value: item.id.uuidString).execute()
+            ToastManager.shared.show("정산이 수정되었습니다")
         } catch {
             await fetchSettlements()
             showError("정산 수정에 실패했습니다")
@@ -172,6 +177,7 @@ final class DataManager {
         settlements.removeAll { $0.id == id }
         do {
             try await supabase.from("settlements").delete().eq("id", value: id.uuidString).execute()
+            ToastManager.shared.show("정산이 삭제되었습니다", icon: "trash.fill")
         } catch {
             settlements = backup
             showError("삭제에 실패했습니다")
@@ -196,6 +202,7 @@ final class DataManager {
             let created: ReelsNoteDTO = try await supabase
                 .from("reels_notes").insert(dto).select().single().execute().value
             reelsNotes.insert(created, at: 0)
+            ToastManager.shared.show("릴스 노트가 생성되었습니다")
             return created
         } catch {
             showError("릴스 노트 추가에 실패했습니다: \(error.localizedDescription)")
@@ -210,6 +217,7 @@ final class DataManager {
         }
         do {
             try await supabase.from("reels_notes").update(item).eq("id", value: item.id.uuidString).execute()
+            ToastManager.shared.show("릴스 노트가 저장되었습니다")
         } catch {
             await fetchReelsNotes()
             showError("릴스 노트 수정에 실패했습니다")
@@ -221,6 +229,7 @@ final class DataManager {
         reelsNotes.removeAll { $0.id == id }
         do {
             try await supabase.from("reels_notes").delete().eq("id", value: id.uuidString).execute()
+            ToastManager.shared.show("릴스 노트가 삭제되었습니다", icon: "trash.fill")
         } catch {
             reelsNotes = backup
             showError("삭제에 실패했습니다")
@@ -245,6 +254,7 @@ final class DataManager {
             let created: GeneralNoteDTO = try await supabase
                 .from("general_notes").insert(dto).select().single().execute().value
             generalNotes.insert(created, at: 0)
+            ToastManager.shared.show("메모가 생성되었습니다")
             return created
         } catch {
             showError("메모 추가에 실패했습니다: \(error.localizedDescription)")
@@ -259,6 +269,7 @@ final class DataManager {
         }
         do {
             try await supabase.from("general_notes").update(item).eq("id", value: item.id.uuidString).execute()
+            ToastManager.shared.show("메모가 저장되었습니다")
         } catch {
             await fetchGeneralNotes()
             showError("메모 수정에 실패했습니다")
@@ -270,6 +281,7 @@ final class DataManager {
         generalNotes.removeAll { $0.id == id }
         do {
             try await supabase.from("general_notes").delete().eq("id", value: id.uuidString).execute()
+            ToastManager.shared.show("메모가 삭제되었습니다", icon: "trash.fill")
         } catch {
             generalNotes = backup
             showError("삭제에 실패했습니다")

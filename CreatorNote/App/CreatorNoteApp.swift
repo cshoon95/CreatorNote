@@ -9,6 +9,7 @@ struct InflueApp: App {
         WindowGroup {
             RootView()
                 .environment(themeManager)
+                .withToast()
                 .onOpenURL { url in
                     Task {
                         try? await SupabaseManager.shared.client.auth.handle(url)

@@ -100,6 +100,49 @@ fun SettingsScreen(
             Text("로그아웃", color = theme.danger)
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        // Delete Account
+        var showDeleteDialog by remember { mutableStateOf(false) }
+        var isDeleting by remember { mutableStateOf(false) }
+
+        TextButton(
+            onClick = { showDeleteDialog = true },
+            enabled = !isDeleting,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (isDeleting) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(8.dp))
+            }
+            Text("계정 탈퇴", fontSize = 13.sp, color = theme.textSecondary)
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("계정 탈퇴") },
+                text = { Text("계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeleteDialog = false
+                        isDeleting = true
+                        scope.launch {
+                            authManager.deleteAccount()
+                            isDeleting = false
+                        }
+                    }) {
+                        Text("탈퇴하기", color = theme.danger)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("취소")
+                    }
+                }
+            )
+        }
+
         Spacer(Modifier.height(32.dp))
         Text("Influe v1.0", fontSize = 12.sp, color = theme.textSecondary, modifier = Modifier.align(Alignment.CenterHorizontally))
     }

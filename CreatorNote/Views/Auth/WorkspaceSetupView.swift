@@ -44,8 +44,11 @@ struct WorkspaceSetupView: View {
 
                     Text("함께 사용할 공간을 만들어요")
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(.black.opacity(0.15))
+                        .clipShape(Capsule())
 
                     Spacer().frame(height: 24)
                 }

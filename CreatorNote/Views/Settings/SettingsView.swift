@@ -10,8 +10,6 @@ struct SettingsView: View {
                 profileHeroCard(theme: theme)
                 workspaceCard(theme: theme)
                 themeCard(theme: theme)
-                appInfoCard(theme: theme)
-                logoutButton(theme: theme)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -55,26 +53,21 @@ struct SettingsView: View {
                             .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
 
-                        if let provider = profile.provider {
-                            HStack(spacing: 5) {
-                                Image(systemName: provider.lowercased() == "apple" ? "apple.logo" : "globe")
-                                    .font(.caption)
-                                Text(provider)
-                                    .font(.system(.subheadline, design: .rounded))
-                            }
-                            .foregroundStyle(.white.opacity(0.8))
-                        }
-                    } else {
-                        Text("로그인되지 않음")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.7))
                     }
-                }
 
-                Spacer()
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .padding(.horizontal, 22)
+                .padding(.vertical, 24)
             }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 24)
+            .shadow(color: theme.gradient.first?.opacity(0.35) ?? .clear, radius: 16, x: 0, y: 8)
         }
         .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
     }
@@ -155,11 +148,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 14) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 14) {
                 ForEach(AppThemeType.allCases) { themeType in
                     let t = AppTheme.theme(for: themeType)
                     let isSelected = themeManager.currentThemeType == themeType
@@ -179,15 +168,9 @@ struct SettingsView: View {
                                     )
                                     .frame(height: 96)
 
-                                if isSelected {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.system(size: 26, weight: .bold))
-                                        .foregroundStyle(.white)
-                                } else {
-                                    Image(systemName: themeType.icon)
-                                        .font(.system(size: 22, weight: .medium))
-                                        .foregroundStyle(.white.opacity(0.85))
-                                }
+                                Image(systemName: isSelected ? "checkmark.circle.fill" : themeType.icon)
+                                    .font(.system(size: isSelected ? 26 : 22, weight: isSelected ? .bold : .medium))
+                                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.85))
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 22))
                             .overlay(
