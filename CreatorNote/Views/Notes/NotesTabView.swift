@@ -7,25 +7,27 @@ struct NotesTabView: View {
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
-            Group {
-                if selectedSegment == 0 {
-                    ReelsNoteListView()
-                } else {
-                    GeneralNoteListView()
+            VStack(spacing: 0) {
+                TossPillTabBar(
+                    tabs: ["릴스 노트", "일반 메모"],
+                    selectedIndex: $selectedSegment,
+                    theme: theme
+                )
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 4)
+
+                Group {
+                    if selectedSegment == 0 {
+                        ReelsNoteListView()
+                    } else {
+                        GeneralNoteListView()
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(theme.background)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    TossPillTabBar(
-                        tabs: ["릴스 노트", "일반 메모"],
-                        selectedIndex: $selectedSegment,
-                        theme: theme
-                    )
-                }
-            }
         }
     }
 }

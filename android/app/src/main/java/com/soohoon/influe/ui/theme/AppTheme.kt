@@ -51,10 +51,17 @@ fun getTheme(type: AppThemeType): AppTheme {
 
     return when (type) {
         AppThemeType.LAVENDER -> AppTheme(
-            type = type, primary = Color(0xFF7C5CFC), secondary = Color(0xFFB39DDB),
-            accent = Color(0xFF9C7CFF), background = lightBg, surfaceBackground = lightSurface,
-            cardBackground = lightCard, textPrimary = lightText, textSecondary = lightTextSec,
-            gradient = listOf(Color(0xFF7C5CFC), Color(0xFFB39DDB)), divider = lightDivider
+            type = type,
+            primary = Color(0xFF7C3AED),
+            secondary = Color(0xFFA78BFA),
+            accent = Color(0xFFEC4899),
+            background = Color(0xFFF5F3FF),
+            surfaceBackground = Color(0xFFEDE9FE),
+            cardBackground = lightCard,
+            textPrimary = lightText,
+            textSecondary = lightTextSec,
+            gradient = listOf(Color(0xFF7C3AED), Color(0xFFC4B5FD)),
+            divider = lightDivider
         )
         AppThemeType.ROSE -> AppTheme(
             type = type, primary = Color(0xFFE91E63), secondary = Color(0xFFF48FB1),
@@ -87,10 +94,20 @@ fun getTheme(type: AppThemeType): AppTheme {
             gradient = listOf(Color(0xFF5C6BC0), Color(0xFF7986CB)), divider = Color(0xFF333333), isDark = true
         )
         AppThemeType.PASTEL -> AppTheme(
-            type = type, primary = Color(0xFFA78BFA), secondary = Color(0xFFF9A8D4),
-            accent = Color(0xFFC084FC), background = lightBg, surfaceBackground = lightSurface,
-            cardBackground = lightCard, textPrimary = lightText, textSecondary = lightTextSec,
-            gradient = listOf(Color(0xFFA78BFA), Color(0xFFF9A8D4)), divider = lightDivider
+            type = type,
+            primary = Color(0xFF8B5CF6),
+            secondary = Color(0xFFEC4899),
+            accent = Color(0xFF06B6D4),
+            background = Color(0xFFF8F7FE),
+            surfaceBackground = Color(0xFFF0EEFF),
+            cardBackground = Color(0xFFFFFFFF),
+            textPrimary = Color(0xFF1E1B4B),
+            textSecondary = Color(0xFF8B83A3),
+            gradient = listOf(Color(0xFFC4B5FD), Color(0xFFF9A8D4)),
+            success = Color(0xFF10B981),
+            warning = Color(0xFFF59E0B),
+            danger = Color(0xFFF43F5E),
+            divider = Color(0xFFEDE9FE)
         )
         AppThemeType.CLEAN -> AppTheme(
             type = type, primary = Color(0xFF0095F6), secondary = Color(0xFFDD2A7B),
@@ -102,13 +119,13 @@ fun getTheme(type: AppThemeType): AppTheme {
 }
 
 class ThemeManager(private val context: Context) {
-    private val _currentTheme = mutableStateOf(getTheme(AppThemeType.LAVENDER))
+    private val _currentTheme = mutableStateOf(getTheme(AppThemeType.PASTEL))
     val theme: State<AppTheme> = _currentTheme
 
     suspend fun loadTheme() {
         val prefs = context.themeDataStore.data.first()
-        val typeName = prefs[stringPreferencesKey("theme_type")] ?: AppThemeType.LAVENDER.name
-        val type = try { AppThemeType.valueOf(typeName) } catch (_: Exception) { AppThemeType.LAVENDER }
+        val typeName = prefs[stringPreferencesKey("theme_type")] ?: AppThemeType.PASTEL.name
+        val type = try { AppThemeType.valueOf(typeName) } catch (_: Exception) { AppThemeType.PASTEL }
         _currentTheme.value = getTheme(type)
     }
 
@@ -120,4 +137,4 @@ class ThemeManager(private val context: Context) {
     }
 }
 
-val LocalAppTheme = staticCompositionLocalOf { getTheme(AppThemeType.LAVENDER) }
+val LocalAppTheme = staticCompositionLocalOf { getTheme(AppThemeType.PASTEL) }

@@ -29,13 +29,13 @@ struct SettingsView: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 24))
 
             HStack(spacing: 18) {
                 ZStack {
                     Circle()
                         .fill(.white.opacity(0.25))
-                        .frame(width: 70, height: 70)
+                        .frame(width: 80, height: 80)
 
                     if let profile = AuthManager.shared.currentProfile {
                         Text(String((profile.displayName ?? "U").prefix(1)).uppercased())
@@ -52,7 +52,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     if let profile = AuthManager.shared.currentProfile {
                         Text(profile.displayName ?? "사용자")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: 22, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
 
                         if let provider = profile.provider {
@@ -76,7 +76,7 @@ struct SettingsView: View {
             .padding(.horizontal, 22)
             .padding(.vertical, 24)
         }
-        .shadow(color: theme.gradient.first?.opacity(0.35) ?? .clear, radius: 16, x: 0, y: 8)
+        .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
     }
 
     private func workspaceCard(theme: AppTheme) -> some View {
@@ -93,7 +93,7 @@ struct SettingsView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 44, height: 44)
+                        .frame(width: 48, height: 48)
 
                     Image(systemName: "rectangle.3.group.fill")
                         .font(.system(size: 20, weight: .medium))
@@ -117,10 +117,10 @@ struct SettingsView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(theme.textSecondary.opacity(0.6))
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 18)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
             .background(theme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 20))
+            .clipShape(RoundedRectangle(cornerRadius: 24))
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
         .buttonStyle(.plain)
@@ -169,7 +169,7 @@ struct SettingsView: View {
                     } label: {
                         VStack(spacing: 8) {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 22)
                                     .fill(
                                         LinearGradient(
                                             colors: t.gradient,
@@ -177,7 +177,7 @@ struct SettingsView: View {
                                             endPoint: .bottomTrailing
                                         )
                                     )
-                                    .frame(height: 90)
+                                    .frame(height: 96)
 
                                 if isSelected {
                                     Image(systemName: "checkmark.circle.fill")
@@ -189,9 +189,9 @@ struct SettingsView: View {
                                         .foregroundStyle(.white.opacity(0.85))
                                 }
                             }
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 22)
                                     .stroke(
                                         isSelected ? theme.primary : Color.clear,
                                         lineWidth: 3
@@ -216,14 +216,14 @@ struct SettingsView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 20)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
 
     private func appInfoCard(theme: AppTheme) -> some View {
         HStack(spacing: 16) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 18)
                     .fill(
                         LinearGradient(
                             colors: theme.gradient,
@@ -231,7 +231,7 @@ struct SettingsView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 54, height: 54)
+                    .frame(width: 56, height: 56)
 
                 Image(systemName: "sparkles.rectangle.stack")
                     .font(.system(size: 24, weight: .medium))
@@ -263,7 +263,7 @@ struct SettingsView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 18)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
 
@@ -281,7 +281,7 @@ struct SettingsView: View {
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .frame(height: 54)
+            .frame(height: 56)
             .background(
                 LinearGradient(
                     colors: [Color(hex: "FF4B4B"), Color(hex: "FF2D55")],
@@ -289,9 +289,9 @@ struct SettingsView: View {
                     endPoint: .trailing
                 )
             )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: Color(hex: "FF2D55").opacity(0.35), radius: 10, x: 0, y: 4)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: Color(hex: "FF2D55").opacity(0.25), radius: 12, x: 0, y: 5)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, 12)
     }
 }

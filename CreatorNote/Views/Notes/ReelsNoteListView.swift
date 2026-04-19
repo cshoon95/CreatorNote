@@ -42,7 +42,6 @@ struct ReelsNoteListView: View {
         let theme = themeManager.theme
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
-                // 검색바
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.subheadline)
@@ -57,33 +56,23 @@ struct ReelsNoteListView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 13)
                 .background(theme.surfaceBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 8)
 
-                // 필터 칩 + 정렬
                 HStack(spacing: 0) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            filterChip(
-                                label: "전체",
-                                count: notes.count,
-                                isSelected: filterStatus == nil,
-                                theme: theme
-                            ) {
+                            FilterChipView(label: "전체", count: notes.count, isSelected: filterStatus == nil, theme: theme) {
                                 filterStatus = nil
                             }
                             ForEach(ReelsNoteStatus.allCases, id: \.self) { status in
-                                filterChip(
-                                    label: status.displayName,
-                                    count: notes.filter { $0.reelsNoteStatus == status }.count,
-                                    isSelected: filterStatus == status,
-                                    theme: theme
-                                ) {
+                                FilterChipView(label: status.displayName, count: notes.filter { $0.reelsNoteStatus == status }.count, isSelected: filterStatus == status, theme: theme) {
                                     filterStatus = status
                                 }
                             }
@@ -107,13 +96,17 @@ struct ReelsNoteListView: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 3) {
+                        HStack(spacing: 4) {
                             Image(systemName: "arrow.up.arrow.down")
                                 .font(.caption2)
                             Text(sortOrder.rawValue)
-                                .font(.caption)
+                                .font(.caption.bold())
                         }
                         .foregroundStyle(theme.textSecondary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(theme.surfaceBackground)
+                        .clipShape(Capsule())
                     }
                     .padding(.trailing, 16)
                 }
@@ -142,18 +135,16 @@ struct ReelsNoteListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            // FAB
-            Button {
-                showingNewNote = true
-            } label: {
+            Button { showingNewNote = true } label: {
                 Image(systemName: "plus")
-                    .font(.title3)
-                    .foregroundStyle(theme.primary)
-                    .frame(width: 52, height: 52)
-                    .background(theme.cardBackground)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(
+                        LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
                     .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
-                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
+                    .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
             }
             .padding(20)
         }
@@ -179,47 +170,14 @@ struct ReelsNoteListView: View {
         }
     }
 
-    // MARK: - View Builders
-
-    private func filterChip(
-        label: String,
-        count: Int,
-        isSelected: Bool,
-        theme: AppTheme,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: {
-            Haptic.selection()
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
-                action()
-            }
-        }) {
-            HStack(spacing: 3) {
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(isSelected ? .bold : .regular)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.caption2)
-                }
-            }
-            .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
-    }
-
     private func noteCard(_ note: ReelsNoteDTO, theme: AppTheme) -> some View {
         HStack(spacing: 0) {
-            // 왼쪽 상태 색상 바
-            RoundedRectangle(cornerRadius: 2)
-                .fill(statusColor(note.reelsNoteStatus))
-                .frame(width: 4)
+            RoundedRectangle(cornerRadius: 4)
+                .fill(note.reelsNoteStatus.color)
+                .frame(width: 3)
                 .padding(.vertical, 6)
 
             VStack(alignment: .leading, spacing: 8) {
-                // 제목 행
                 HStack(alignment: .center, spacing: 6) {
                     if note.isPinned {
                         Image(systemName: "pin.fill")
@@ -234,7 +192,6 @@ struct ReelsNoteListView: View {
                     Spacer()
                 }
 
-                // 본문 미리보기
                 if !note.plainContent.isEmpty {
                     Text(note.plainContent)
                         .font(.caption)
@@ -243,7 +200,6 @@ struct ReelsNoteListView: View {
                         .multilineTextAlignment(.leading)
                 }
 
-                // 태그
                 if !note.tags.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(note.tags.prefix(3), id: \.self) { tag in
@@ -254,7 +210,6 @@ struct ReelsNoteListView: View {
                     }
                 }
 
-                // 하단 메타 행
                 HStack(spacing: 6) {
                     Text(note.updatedAt, format: .dateTime.month().day().hour().minute())
                         .font(.caption2)
@@ -268,10 +223,10 @@ struct ReelsNoteListView: View {
             .padding(.vertical, 14)
         }
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.05), radius: 10, x: 0, y: 3)
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 20)
                 .stroke(theme.divider, lineWidth: 0.5)
         )
         .contextMenu {
@@ -299,16 +254,6 @@ struct ReelsNoteListView: View {
             subtitle: notes.isEmpty ? "대본, 캡션 등을 작성해보세요" : "다른 검색어를 입력해보세요",
             color: theme.primary
         )
-    }
-
-    // MARK: - Helpers
-
-    private func statusColor(_ status: ReelsNoteStatus) -> Color {
-        switch status {
-        case .drafting: return .orange
-        case .readyToUpload: return .blue
-        case .uploaded: return .green
-        }
     }
 
     private func togglePin(_ note: ReelsNoteDTO) async {

@@ -45,7 +45,7 @@ struct DashboardView: View {
         let theme = themeManager.theme
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
                     headerCard(theme: theme)
                         .padding(.top, 8)
 
@@ -97,12 +97,14 @@ struct DashboardView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink(destination: GlobalSearchView()) {
                         Image(systemName: "magnifyingglass")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(theme.primary)
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: SettingsView()) {
                         Image(systemName: "gearshape.fill")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(theme.primary)
                     }
                 }
@@ -114,12 +116,22 @@ struct DashboardView: View {
     private func headerCard(theme: AppTheme) -> some View {
         ZStack(alignment: .bottomLeading) {
             LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .clipShape(RoundedRectangle(cornerRadius: 28))
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 14) {
                 Text(greeting)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
+
+                HStack(spacing: 6) {
+                    Text("✦ v2.0")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(.white.opacity(0.18))
+                        .clipShape(Capsule())
+                }
 
                 Text("Influe")
                     .font(.system(.largeTitle, design: .rounded).bold())
@@ -136,14 +148,14 @@ struct DashboardView: View {
             }
             .padding(24)
         }
-        .frame(height: 160)
+        .frame(height: 180)
         .padding(.horizontal)
     }
 
     private func headerStat(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.title3.bold())
+                .font(.title2.bold())
                 .foregroundStyle(.white)
             Text(label)
                 .font(.caption)
@@ -160,9 +172,14 @@ struct DashboardView: View {
     private func miniStatCard(title: String, icon: String, iconColor: Color, primary: String, sub: String, theme: AppTheme) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundStyle(iconColor)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.subheadline)
+                        .foregroundStyle(iconColor)
+                }
                 Spacer()
                 Text(title)
                     .font(.caption.bold())
@@ -177,17 +194,17 @@ struct DashboardView: View {
                 .font(.caption)
                 .foregroundStyle(theme.textSecondary)
         }
-        .padding(16)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: theme.primary.opacity(0.06), radius: 8, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: theme.primary.opacity(0.08), radius: 12, x: 0, y: 6)
     }
 
     private func todaySection(theme: AppTheme) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Label("오늘 할 일", systemImage: "checklist")
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(theme.textPrimary)
                 .padding(.horizontal)
 
@@ -196,7 +213,7 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Circle()
                             .fill(Color.red.opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .overlay {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .font(.subheadline)
@@ -228,7 +245,7 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Circle()
                             .fill(Color.orange.opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .overlay {
                                 Image(systemName: "clock.badge.exclamationmark")
                                     .font(.subheadline)
@@ -256,7 +273,7 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Circle()
                             .fill(theme.primary.opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .overlay {
                                 Image(systemName: "pencil.circle.fill")
                                     .font(.subheadline)
@@ -280,10 +297,10 @@ struct DashboardView: View {
     }
 
     private func pendingSection(theme: AppTheme) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label("정산 대기", systemImage: "clock.fill")
-                    .font(.headline)
+                    .font(.headline.weight(.bold))
                     .foregroundStyle(theme.textPrimary)
                 Spacer()
                 Text(pendingAmount.krwFormatted)
@@ -297,7 +314,7 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Circle()
                             .fill(Color.orange.opacity(0.15))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .overlay {
                                 Image(systemName: "clock.fill")
                                     .font(.subheadline)
@@ -325,9 +342,9 @@ struct DashboardView: View {
     }
 
     private func expiringSection(theme: AppTheme) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Label("마감 임박", systemImage: "exclamationmark.triangle.fill")
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(theme.textPrimary)
                 .padding(.horizontal)
 
@@ -336,7 +353,7 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Circle()
                             .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 40, height: 40)
+                            .frame(width: 44, height: 44)
                             .overlay {
                                 Text(String(item.brandName.prefix(1)))
                                     .font(.subheadline.bold())
@@ -369,9 +386,9 @@ struct DashboardView: View {
     }
 
     private func recentNotesSection(theme: AppTheme) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("최근 릴스 노트")
-                .font(.headline)
+                .font(.headline.weight(.bold))
                 .foregroundStyle(theme.textPrimary)
                 .padding(.horizontal)
 
@@ -379,7 +396,7 @@ struct DashboardView: View {
                 ThemedCard {
                     HStack(spacing: 12) {
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(statusColor(note.reelsNoteStatus).opacity(0.8))
+                            .fill(note.reelsNoteStatus.color.opacity(0.8))
                             .frame(width: 4, height: 44)
                         VStack(alignment: .leading, spacing: 4) {
                             Text(note.title.isEmpty ? "제목 없음" : note.title)
@@ -401,26 +418,26 @@ struct DashboardView: View {
     }
 
     private func emptyState(theme: AppTheme) -> some View {
-        VStack(spacing: 16) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 48))
-                .foregroundStyle(theme.primary.opacity(0.5))
-            Text("시작해볼까요?")
-                .font(.title3.bold())
-                .foregroundStyle(theme.textPrimary)
-            Text("협찬 정보를 추가하거나\n릴스 노트를 작성해보세요")
-                .font(.subheadline)
-                .foregroundStyle(theme.textSecondary)
-                .multilineTextAlignment(.center)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(theme.primary.opacity(0.08))
+                    .frame(width: 96, height: 96)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 40))
+                    .foregroundStyle(theme.primary.opacity(0.6))
+            }
+            VStack(spacing: 8) {
+                Text("시작해볼까요?")
+                    .font(.title3.bold())
+                    .foregroundStyle(theme.textPrimary)
+                Text("협찬 정보를 추가하거나\n릴스 노트를 작성해보세요")
+                    .font(.subheadline)
+                    .foregroundStyle(theme.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
         }
-        .padding(.top, 40)
+        .padding(.top, 60)
     }
 
-    private func statusColor(_ status: ReelsNoteStatus) -> Color {
-        switch status {
-        case .drafting: return .orange
-        case .readyToUpload: return .blue
-        case .uploaded: return .green
-        }
-    }
 }

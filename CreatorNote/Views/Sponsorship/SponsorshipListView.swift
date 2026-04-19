@@ -40,19 +40,21 @@ struct SponsorshipListView: View {
                                 }
                             }
                         }
-                        .padding(14)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
                         .background(theme.surfaceBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
                         .padding(.horizontal)
                         .padding(.top, 8)
                         .padding(.bottom, 12)
 
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                filterChip("전체", count: sponsorships.count, isSelected: filterStatus == nil, theme: theme) { filterStatus = nil }
+                                FilterChipView(label: "전체", count: sponsorships.count, isSelected: filterStatus == nil, theme: theme) { filterStatus = nil }
                                 ForEach(SponsorshipStatus.allCases, id: \.self) { s in
                                     let cnt = sponsorships.filter { $0.sponsorshipStatus == s }.count
-                                    filterChip(s.displayName, count: cnt, isSelected: filterStatus == s, theme: theme) { filterStatus = s }
+                                    FilterChipView(label: s.displayName, count: cnt, isSelected: filterStatus == s, theme: theme) { filterStatus = s }
                                 }
                             }
                             .padding(.horizontal)
@@ -80,13 +82,14 @@ struct SponsorshipListView: View {
 
                 Button { showingAddSheet = true } label: {
                     Image(systemName: "plus")
-                        .font(.title3)
-                        .foregroundStyle(theme.primary)
-                        .frame(width: 52, height: 52)
-                        .background(theme.cardBackground)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(
+                            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
-                        .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
+                        .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
                 }
                 .padding(20)
             }
@@ -137,31 +140,11 @@ struct SponsorshipListView: View {
                 .padding(.top, 10)
             }
         }
-        .padding(18)
+        .padding(16)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(theme.divider, lineWidth: 0.5))
-    }
-
-    private func filterChip(_ label: String, count: Int, isSelected: Bool, theme: AppTheme, action: @escaping () -> Void) -> some View {
-        Button {
-            Haptic.selection()
-            withAnimation(.spring(duration: 0.25)) { action() }
-        } label: {
-            HStack(spacing: 3) {
-                Text(label)
-                    .font(.caption)
-                    .fontWeight(isSelected ? .bold : .regular)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.caption2)
-                }
-            }
-            .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(theme.divider, lineWidth: 1))
     }
 
     private func emptyState(theme: AppTheme) -> some View {

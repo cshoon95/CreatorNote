@@ -28,10 +28,17 @@ fun ThemedCard(
 ) {
     val theme = LocalAppTheme.current
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = Color(0xFF8B5CF6).copy(alpha = 0.06f),
+                spotColor = Color(0xFF8B5CF6).copy(alpha = 0.08f)
+            ),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = theme.cardBackground),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp), content = content)
     }
@@ -49,7 +56,15 @@ fun EmptyStateView(
         modifier = modifier.fillMaxWidth().padding(40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(icon, fontSize = 48.sp)
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(theme.primary.copy(alpha = 0.08f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(icon, fontSize = 44.sp)
+        }
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = theme.textPrimary)
         Spacer(Modifier.height(8.dp))
@@ -95,8 +110,8 @@ fun SponsorshipStatusBadge(status: SponsorshipStatus) {
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(bg, RoundedCornerShape(12.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .background(bg, RoundedCornerShape(50.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     )
 }
 
@@ -113,8 +128,8 @@ fun ReelsNoteStatusBadge(status: ReelsNoteStatus) {
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
         modifier = Modifier
-            .background(bg, RoundedCornerShape(12.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .background(bg, RoundedCornerShape(50.dp))
+            .padding(horizontal = 10.dp, vertical = 4.dp)
     )
 }
 

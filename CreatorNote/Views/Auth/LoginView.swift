@@ -9,63 +9,172 @@ struct LoginView: View {
     @State private var showError = false
 
     var body: some View {
-        let theme = themeManager.theme
         GeometryReader { geo in
-            ZStack(alignment: .bottom) {
+            ZStack {
+                // 배경: 밝은 파스텔 그라데이션
                 LinearGradient(
-                    colors: theme.gradient,
-                    startPoint: .top,
-                    endPoint: .bottom
+                    colors: [
+                        Color(hex: "F0EEFF"),
+                        Color(hex: "FAE8FF"),
+                        Color(hex: "E8F4FF")
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
 
+                // 장식 블러 원들
+                Circle()
+                    .fill(Color(hex: "C4B5FD").opacity(0.35))
+                    .frame(width: 320)
+                    .offset(x: -80, y: -geo.size.height * 0.32)
+                    .blur(radius: 70)
+
+                Circle()
+                    .fill(Color(hex: "F9A8D4").opacity(0.3))
+                    .frame(width: 280)
+                    .offset(x: 120, y: -geo.size.height * 0.22)
+                    .blur(radius: 60)
+
+                Circle()
+                    .fill(Color(hex: "BAE6FD").opacity(0.25))
+                    .frame(width: 220)
+                    .offset(x: -60, y: geo.size.height * 0.28)
+                    .blur(radius: 50)
+
+                // 메인 레이아웃
                 VStack(spacing: 0) {
                     Spacer()
 
-                    VStack(spacing: 20) {
+                    // 로고 섹션
+                    VStack(spacing: 18) {
                         ZStack {
-                            Circle()
-                                .fill(.white.opacity(0.18))
-                                .frame(width: 100, height: 100)
+                            RoundedRectangle(cornerRadius: 28)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(hex: "C4B5FD"), Color(hex: "F9A8D4")],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 96, height: 96)
+                                .shadow(color: Color(hex: "A78BFA").opacity(0.4), radius: 24, y: 10)
 
                             Image(systemName: "sparkles.rectangle.stack")
-                                .font(.system(size: 48, weight: .medium))
+                                .font(.system(size: 42, weight: .medium))
                                 .foregroundStyle(.white)
                         }
-                        .shadow(color: .black.opacity(0.15), radius: 20, x: 0, y: 8)
 
-                        VStack(spacing: 10) {
+                        VStack(spacing: 8) {
                             Text("Influe")
                                 .font(.system(size: 42, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Color(hex: "1E1B4B"))
 
                             Text("인플루언서를 위한 스마트 관리")
                                 .font(.system(.subheadline, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.85))
+                                .foregroundStyle(Color(hex: "8B83A3"))
+
+                            Text("✦ v2.0")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color(hex: "8B5CF6"))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(Color(hex: "8B5CF6").opacity(0.1))
+                                .clipShape(Capsule())
                         }
                     }
-                    .frame(height: geo.size.height * 0.52, alignment: .center)
 
                     Spacer()
-                }
 
-                loginCard(theme: theme, geo: geo)
+                    // 로그인 버튼 섹션
+                    VStack(spacing: 20) {
+                        VStack(spacing: 12) {
+                            SignInWithAppleButton(.signIn) { request in
+                                request.requestedScopes = [.fullName, .email]
+                            } onCompletion: { result in
+                                Task { await handleAppleSignIn(result) }
+                            }
+                            .signInWithAppleButtonStyle(.black)
+                            .frame(height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+
+                            Button {
+                                Task {
+                                    await performLogin(provider: "google") {
+                                        await AuthManager.shared.signInWithGoogle()
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "g.circle.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundStyle(Color(hex: "4285F4"))
+
+                                    Text("Google로 계속하기")
+                                        .font(.system(.body, design: .rounded))
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(Color(hex: "1E1B4B"))
+
+                                    Spacer()
+
+                                    if loadingProvider == "google" {
+                                        ProgressView()
+                                            .tint(Color(hex: "8B5CF6"))
+                                            .scaleEffect(0.8)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                                .frame(height: 56)
+                                .frame(maxWidth: .infinity)
+                                .background(.white.opacity(0.72))
+                                .background(.ultraThinMaterial)
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(.white.opacity(0.6), lineWidth: 1)
+                                }
+                                .shadow(color: Color(hex: "A78BFA").opacity(0.12), radius: 10, y: 4)
+                            }
+                            .disabled(isLoading)
+                            .opacity(isLoading && loadingProvider != "google" ? 0.5 : 1.0)
+                        }
+
+                        HStack(spacing: 0) {
+                            Text("로그인 시 ")
+                                .font(.caption2)
+                                .foregroundStyle(Color(hex: "8B83A3").opacity(0.8))
+                            Link("개인정보처리방침", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880c5b571f566a637d578")!)
+                                .font(.caption2)
+                            Text(" 및 ")
+                                .font(.caption2)
+                                .foregroundStyle(Color(hex: "8B83A3").opacity(0.8))
+                            Link("이용약관", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880a9ab29d6ac3439bbde")!)
+                                .font(.caption2)
+                            Text("에 동의하게 됩니다.")
+                                .font(.caption2)
+                                .foregroundStyle(Color(hex: "8B83A3").opacity(0.8))
+                        }
+                    }
+                    .padding(.horizontal, 28)
+                    .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? geo.safeAreaInsets.bottom + 16 : 40)
+                }
             }
         }
         .ignoresSafeArea(edges: .bottom)
         .overlay {
             if isLoading {
-                Color.black.opacity(0.25)
+                Color.black.opacity(0.2)
                     .ignoresSafeArea()
                     .transition(.opacity)
 
                 ProgressView()
                     .scaleEffect(1.2)
-                    .tint(theme.primary)
+                    .tint(Color(hex: "8B5CF6"))
                     .padding(24)
-                    .background(theme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: theme.primary.opacity(0.2), radius: 12)
+                    .background(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: Color(hex: "A78BFA").opacity(0.2), radius: 16)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: isLoading)
@@ -74,115 +183,6 @@ struct LoginView: View {
         } message: {
             Text(errorMessage ?? "알 수 없는 오류가 발생했습니다.")
         }
-    }
-
-    private func loginCard(theme: AppTheme, geo: GeometryProxy) -> some View {
-        VStack(spacing: 24) {
-            RoundedRectangle(cornerRadius: 3)
-                .fill(theme.textSecondary.opacity(0.3))
-                .frame(width: 40, height: 5)
-                .padding(.top, 14)
-
-            VStack(spacing: 6) {
-                Text("시작하기")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(theme.textPrimary)
-
-                Text("계정으로 빠르게 로그인하세요")
-                    .font(.system(.subheadline, design: .rounded))
-                    .foregroundStyle(theme.textSecondary)
-            }
-            .padding(.top, 4)
-
-            VStack(spacing: 14) {
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    Task { await handleAppleSignIn(result) }
-                }
-                .signInWithAppleButtonStyle(
-                    themeManager.currentThemeType == .midnight ? .white : .black
-                )
-                .frame(height: 54)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
-
-                Button {
-                    Task {
-                        await performLogin(provider: "google") {
-                            await AuthManager.shared.signInWithGoogle()
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(hex: "F1F3F4"))
-                                .frame(width: 32, height: 32)
-                            Image(systemName: "g.circle.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(Color(hex: "4285F4"))
-                        }
-
-                        Text("Google로 계속하기")
-                            .font(.system(.body, design: .rounded))
-                            .fontWeight(.semibold)
-
-                        Spacer()
-
-                        if loadingProvider == "google" {
-                            ProgressView()
-                                .tint(Color(hex: "3C4043"))
-                                .scaleEffect(0.8)
-                        }
-                    }
-                    .foregroundStyle(Color(hex: "3C4043"))
-                    .padding(.horizontal, 16)
-                    .frame(height: 54)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                    }
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, x: 0, y: 4)
-                }
-                .disabled(isLoading)
-                .opacity(isLoading && loadingProvider != "google" ? 0.5 : 1.0)
-            }
-
-            HStack(spacing: 0) {
-                Text("로그인 시 ")
-                    .font(.caption2)
-                    .foregroundStyle(theme.textSecondary.opacity(0.6))
-                Link("개인정보처리방침", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880c5b571f566a637d578")!)
-                    .font(.caption2)
-                Text(" 및 ")
-                    .font(.caption2)
-                    .foregroundStyle(theme.textSecondary.opacity(0.6))
-                Link("이용약관", destination: URL(string: "https://gilded-basin-4bf.notion.site/Influe-341b9edfc50880a9ab29d6ac3439bbde")!)
-                    .font(.caption2)
-                Text("에 동의하게 됩니다.")
-                    .font(.caption2)
-                    .foregroundStyle(theme.textSecondary.opacity(0.6))
-            }
-            .padding(.bottom, geo.safeAreaInsets.bottom > 0 ? geo.safeAreaInsets.bottom : 16)
-        }
-        .padding(.horizontal, 28)
-        .padding(.bottom, 8)
-        .background(
-            theme.cardBackground
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 28,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: 28
-                    )
-                )
-                .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: -4)
-        )
     }
 
     private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) async {

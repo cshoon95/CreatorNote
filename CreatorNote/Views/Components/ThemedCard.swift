@@ -8,21 +8,17 @@ struct ThemedCard<Content: View>: View {
         self.content = content
     }
 
-    private var isFlat: Bool {
-        themeManager.theme.type == .clean || themeManager.theme.type == .pastel
-    }
-
     var body: some View {
         let theme = themeManager.theme
         content()
             .padding(16)
             .background(theme.cardBackground)
-            .clipShape(RoundedRectangle(cornerRadius: isFlat ? 12 : 16))
+            .clipShape(RoundedRectangle(cornerRadius: 24))
             .overlay(
-                RoundedRectangle(cornerRadius: isFlat ? 12 : 16)
-                    .stroke(theme.divider, lineWidth: isFlat ? 0.5 : 0)
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(theme.divider, lineWidth: 1)
             )
-            .shadow(color: isFlat ? .clear : theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
+            .shadow(color: theme.primary.opacity(0.06), radius: 12, x: 0, y: 4)
     }
 }
 
@@ -65,22 +61,20 @@ struct StatusBadge: View {
     let status: ReelsNoteStatus
 
     var body: some View {
-        let color: Color = {
+        let (bgColor, fgColor): (Color, Color) = {
             switch status {
-            case .drafting: return .orange
-            case .readyToUpload: return .blue
-            case .uploaded: return .green
+            case .drafting: return (Color(hex: "FEF3C7"), Color(hex: "D97706"))
+            case .readyToUpload: return (Color(hex: "DBEAFE"), Color(hex: "2563EB"))
+            case .uploaded: return (Color(hex: "D1FAE5"), Color(hex: "059669"))
             }
         }()
-
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-            Text(status.displayName)
-                .font(.caption2)
-        }
-        .foregroundStyle(color)
+        Text(status.displayName)
+            .font(.caption2.bold())
+            .foregroundStyle(fgColor)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(bgColor)
+            .clipShape(Capsule())
     }
 }
 
@@ -100,18 +94,64 @@ struct MemberChip: View {
 
     var body: some View {
         let theme = themeManager.theme
-        HStack(spacing: 3) {
+        HStack(spacing: 4) {
             Circle()
-                .fill(theme.primary.opacity(0.7))
-                .frame(width: 14, height: 14)
+                .fill(theme.gradient.count >= 2 ?
+                    LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing) :
+                    LinearGradient(colors: [theme.primary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 16, height: 16)
                 .overlay {
                     Text(initial)
-                        .font(.system(size: 7, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white)
                 }
             Text(name)
                 .font(.caption2)
                 .foregroundStyle(theme.textSecondary)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(theme.primary.opacity(0.06))
+        .clipShape(Capsule())
+    }
+}
+
+struct FilterChipView: View {
+    let label: String
+    let count: Int
+    let isSelected: Bool
+    let theme: AppTheme
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            Haptic.selection()
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) { action() }
+        } label: {
+            HStack(spacing: 3) {
+                Text(label)
+                    .font(.caption.bold())
+                if count > 0 {
+                    Text("\(count)")
+                        .font(.caption2)
+                }
+            }
+            .foregroundStyle(isSelected ? .white : theme.textSecondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(isSelected ? theme.primary : theme.surfaceBackground)
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+extension ReelsNoteStatus {
+    var color: Color {
+        switch self {
+        case .drafting: return .orange
+        case .readyToUpload: return .blue
+        case .uploaded: return .green
         }
     }
 }
@@ -119,25 +159,24 @@ struct MemberChip: View {
 struct SponsorshipStatusBadge: View {
     let status: SponsorshipStatus
 
-    private var color: Color {
+    private var colors: (Color, Color) {
         switch status {
-        case .preSubmit: return .gray
-        case .underReview: return .orange
-        case .submitted: return .blue
-        case .pendingSettlement: return .purple
-        case .completed: return .green
+        case .preSubmit: return (Color(hex: "F3F4F6"), Color(hex: "6B7280"))
+        case .underReview: return (Color(hex: "FEF3C7"), Color(hex: "D97706"))
+        case .submitted: return (Color(hex: "DBEAFE"), Color(hex: "2563EB"))
+        case .pendingSettlement: return (Color(hex: "FEE2E2"), Color(hex: "DC2626"))
+        case .completed: return (Color(hex: "D1FAE5"), Color(hex: "059669"))
         }
     }
 
     var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 6, height: 6)
-            Text(status.displayName)
-                .font(.caption2)
-        }
-        .foregroundStyle(color)
+        let (bg, fg) = colors
+        Text(status.displayName)
+            .font(.caption2.bold())
+            .foregroundStyle(fg)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(bg)
+            .clipShape(Capsule())
     }
 }
-

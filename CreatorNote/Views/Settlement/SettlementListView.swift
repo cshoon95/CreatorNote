@@ -77,13 +77,14 @@ struct SettlementListView: View {
 
                 Button { showingAddSheet = true } label: {
                     Image(systemName: "plus")
-                        .font(.title3)
-                        .foregroundStyle(theme.primary)
-                        .frame(width: 52, height: 52)
-                        .background(theme.cardBackground)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(
+                            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
                         .clipShape(Circle())
-                        .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
-                        .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
+                        .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
                 }
                 .padding(20)
             }
@@ -122,11 +123,11 @@ struct SettlementListView: View {
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
                 Text(totalNet.krwFormatted)
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(size: 38, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 28)
+            .padding(.top, 32)
             .padding(.bottom, 24)
 
             Rectangle()
@@ -164,27 +165,25 @@ struct SettlementListView: View {
         .background(
             LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: theme.primary.opacity(0.35), radius: 16, y: 6)
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: theme.primary.opacity(0.25), radius: 20, y: 8)
     }
 
     private func filterTabs(theme: AppTheme) -> some View {
-        HStack(spacing: 20) {
+        HStack(spacing: 8) {
             ForEach(FilterTab.allCases, id: \.self) { tab in
                 Button {
                     Haptic.selection()
                     withAnimation(.spring(duration: 0.25)) { filterTab = tab }
                 } label: {
-                    VStack(spacing: 6) {
-                        Text(tab.label)
-                            .font(.subheadline)
-                            .fontWeight(filterTab == tab ? .bold : .regular)
-                            .foregroundStyle(filterTab == tab ? theme.textPrimary : theme.textSecondary)
-                        Rectangle()
-                            .fill(filterTab == tab ? theme.primary : .clear)
-                            .frame(height: 2)
-                            .clipShape(Capsule())
-                    }
+                    Text(tab.label)
+                        .font(.subheadline)
+                        .fontWeight(filterTab == tab ? .bold : .medium)
+                        .foregroundStyle(filterTab == tab ? .white : theme.textSecondary)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 9)
+                        .background(filterTab == tab ? theme.primary : theme.surfaceBackground)
+                        .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -197,7 +196,7 @@ struct SettlementListView: View {
             ZStack {
                 Circle()
                     .fill(item.isPaid ? Color.green.opacity(0.15) : Color.orange.opacity(0.15))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 52, height: 52)
                 Image(systemName: item.isPaid ? "checkmark.circle.fill" : "clock.fill")
                     .font(.title3)
                     .foregroundStyle(item.isPaid ? .green : .orange)
@@ -229,10 +228,10 @@ struct SettlementListView: View {
                     .foregroundStyle(item.isPaid ? .green : .orange)
             }
         }
-        .padding(18)
+        .padding(16)
         .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
     }
 
     private func emptyState(theme: AppTheme) -> some View {

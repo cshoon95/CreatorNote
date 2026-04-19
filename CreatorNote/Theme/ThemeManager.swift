@@ -28,7 +28,7 @@ final class ThemeManager {
 
     private init() {
         let saved = UserDefaults.standard.string(forKey: "selectedTheme") ?? ""
-        self.currentThemeType = AppThemeType(rawValue: saved) ?? .lavender
+        self.currentThemeType = AppThemeType(rawValue: saved) ?? .pastel
         self.followSystem = UserDefaults.standard.bool(forKey: "followSystemTheme")
     }
 
