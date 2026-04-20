@@ -74,7 +74,7 @@ struct LoginView: View {
                                 .font(.system(.subheadline, design: .rounded))
                                 .foregroundStyle(Color(hex: "8B83A3"))
 
-                            Text("✦ v2.0")
+                            Text("✦ v1.0")
                                 .font(.caption.bold())
                                 .foregroundStyle(Color(hex: "8B5CF6"))
                                 .padding(.horizontal, 12)

@@ -21,55 +21,60 @@ struct SettingsView: View {
     }
 
     private func profileHeroCard(theme: AppTheme) -> some View {
-        ZStack {
-            LinearGradient(
-                colors: theme.gradient,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 24))
+        NavigationLink {
+            ProfileView()
+        } label: {
+            ZStack {
+                LinearGradient(
+                    colors: theme.gradient,
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 24))
 
-            HStack(spacing: 18) {
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 80, height: 80)
+                HStack(spacing: 18) {
+                    ZStack {
+                        Circle()
+                            .fill(.white.opacity(0.25))
+                            .frame(width: 80, height: 80)
 
-                    if let profile = AuthManager.shared.currentProfile {
-                        Text(String((profile.displayName ?? "U").prefix(1)).uppercased())
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                    } else {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 30, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.9))
+                        if let profile = AuthManager.shared.currentProfile {
+                            Text(String((profile.displayName ?? "U").prefix(1)).uppercased())
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                        } else {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 30, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
                     }
-                }
-                .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+                    .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    if let profile = AuthManager.shared.currentProfile {
-                        Text(profile.displayName ?? "사용자")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let profile = AuthManager.shared.currentProfile {
+                            Text(profile.displayName ?? "사용자")
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
 
-                        Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
-                            .font(.system(.caption, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.7))
+                            Text("v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0")")
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.6))
                     }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.6))
+                    .padding(.horizontal, 22)
+                    .padding(.vertical, 24)
                 }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 24)
+                .shadow(color: theme.gradient.first?.opacity(0.35) ?? .clear, radius: 16, x: 0, y: 8)
             }
-            .shadow(color: theme.gradient.first?.opacity(0.35) ?? .clear, radius: 16, x: 0, y: 8)
+            .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
         }
-        .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
+        .buttonStyle(.plain)
     }
 
     private func workspaceCard(theme: AppTheme) -> some View {
