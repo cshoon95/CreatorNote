@@ -60,18 +60,18 @@ struct SettingsView: View {
                                 .font(.system(.caption, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.7))
                         }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.6))
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 24)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.6))
                 }
-                .shadow(color: theme.gradient.first?.opacity(0.35) ?? .clear, radius: 16, x: 0, y: 8)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 24)
             }
+            .contentShape(Rectangle())
             .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
         }
         .buttonStyle(.plain)
