@@ -135,16 +135,7 @@ struct NoteTemplateSheet: View {
             VStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    template.iconColor.opacity(0.8),
-                                    template.iconColor.opacity(0.5)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(template.iconColor.opacity(0.7))
                         .frame(width: 56, height: 56)
                         .shadow(color: template.iconColor.opacity(0.25), radius: 8, y: 4)
 

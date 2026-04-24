@@ -115,7 +115,7 @@ struct DashboardView: View {
 
     private func headerCard(theme: AppTheme) -> some View {
         ZStack(alignment: .bottomLeading) {
-            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+            theme.primary
                 .clipShape(RoundedRectangle(cornerRadius: 28))
 
             VStack(alignment: .leading, spacing: 14) {
@@ -124,7 +124,7 @@ struct DashboardView: View {
                     .foregroundStyle(.white.opacity(0.85))
 
                 HStack(spacing: 6) {
-                    Text("✦ v2.0")
+                    Text("✦ v1.0")
                         .font(.caption2.bold())
                         .foregroundStyle(.white.opacity(0.8))
                         .padding(.horizontal, 8)
@@ -310,32 +310,35 @@ struct DashboardView: View {
             .padding(.horizontal)
 
             ForEach(pendingSettlements) { item in
-                ThemedCard {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.orange.opacity(0.15))
-                            .frame(width: 44, height: 44)
-                            .overlay {
-                                Image(systemName: "clock.fill")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.orange)
+                NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
+                    ThemedCard {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(Color.orange.opacity(0.15))
+                                .frame(width: 44, height: 44)
+                                .overlay {
+                                    Image(systemName: "clock.fill")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.orange)
+                                }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.brandName)
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(theme.textPrimary)
+                                if !item.productName.isEmpty {
+                                    Text(item.productName)
+                                        .font(.caption)
+                                        .foregroundStyle(theme.textSecondary)
+                                }
                             }
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.brandName)
+                            Spacer()
+                            Text(item.amount.krwFormatted)
                                 .font(.subheadline.bold())
-                                .foregroundStyle(theme.textPrimary)
-                            if !item.productName.isEmpty {
-                                Text(item.productName)
-                                    .font(.caption)
-                                    .foregroundStyle(theme.textSecondary)
-                            }
+                                .foregroundStyle(.orange)
                         }
-                        Spacer()
-                        Text(item.amount.krwFormatted)
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.orange)
                     }
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
         }
@@ -352,7 +355,7 @@ struct DashboardView: View {
                 ThemedCard {
                     HStack(spacing: 12) {
                         Circle()
-                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .fill(theme.primary)
                             .frame(width: 44, height: 44)
                             .overlay {
                                 Text(String(item.brandName.prefix(1)))

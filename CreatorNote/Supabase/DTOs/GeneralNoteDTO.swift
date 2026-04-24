@@ -9,6 +9,7 @@ struct GeneralNoteDTO: Codable, Identifiable, Sendable {
     var tags: [String]
     var isPinned: Bool
     var createdBy: UUID?
+    var updatedBy: UUID?
     var createdAt: Date
     var updatedAt: Date
 
@@ -19,6 +20,7 @@ struct GeneralNoteDTO: Codable, Identifiable, Sendable {
         case plainContent = "plain_content"
         case isPinned = "is_pinned"
         case createdBy = "created_by"
+        case updatedBy = "updated_by"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

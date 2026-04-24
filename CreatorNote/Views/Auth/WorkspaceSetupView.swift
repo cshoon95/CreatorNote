@@ -20,13 +20,9 @@ struct WorkspaceSetupView: View {
             theme.background
                 .ignoresSafeArea()
 
-            LinearGradient(
-                colors: theme.gradient,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .frame(height: 240)
-            .ignoresSafeArea(edges: .top)
+            theme.primary
+                .frame(height: 240)
+                .ignoresSafeArea(edges: .top)
 
             VStack(spacing: 0) {
                 VStack(spacing: 10) {
@@ -121,7 +117,7 @@ struct WorkspaceSetupView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
                             workspaceNameFocused
-                                ? LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing)
+                                ? LinearGradient(colors: [theme.primary], startPoint: .leading, endPoint: .trailing)
                                 : LinearGradient(colors: [Color.clear], startPoint: .leading, endPoint: .trailing),
                             lineWidth: 1.5
                         )
@@ -179,7 +175,7 @@ struct WorkspaceSetupView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
                             inviteCodeFocused
-                                ? LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing)
+                                ? LinearGradient(colors: [theme.primary], startPoint: .leading, endPoint: .trailing)
                                 : LinearGradient(colors: [Color.clear], startPoint: .leading, endPoint: .trailing),
                             lineWidth: 1.5
                         )
@@ -221,20 +217,7 @@ struct WorkspaceSetupView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(
-                LinearGradient(
-                    colors: isDisabled ? theme.gradient.map { $0.opacity(0.4) } : theme.gradient,
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .foregroundStyle(.white)
-            .clipShape(Capsule())
-            .shadow(
-                color: isDisabled ? .clear : theme.primary.opacity(0.35),
-                radius: 10,
-                y: 4
-            )
+            .foregroundStyle(isDisabled ? theme.primary.opacity(0.4) : theme.primary)
         }
         .disabled(isDisabled)
     }

@@ -75,7 +75,7 @@ struct SettlementDetailView: View {
                 ZStack {
                     Circle()
                         .fill(
-                            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+                            theme.primary
                         )
                         .frame(width: 60, height: 60)
                     Text(String(settlement.brandName.prefix(1)))
@@ -207,22 +207,14 @@ struct SettlementDetailView: View {
                 Task { await DataManager.shared.updateSettlement(updated) }
             }
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Image(systemName: isPaidLocal ? "arrow.uturn.left.circle.fill" : "checkmark.circle.fill")
-                    .font(.title3)
                 Text(isPaidLocal ? "대기 중으로 변경" : "지급 완료 처리")
-                    .font(.headline.bold())
+                    .font(.subheadline.bold())
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(isPaidLocal ? .orange : theme.primary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background(
-                isPaidLocal
-                    ? AnyShapeStyle(Color.orange.gradient)
-                    : AnyShapeStyle(LinearGradient(colors: theme.gradient, startPoint: .leading, endPoint: .trailing))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: (isPaidLocal ? Color.orange : theme.primary).opacity(0.35), radius: 10, y: 4)
+            .padding(.vertical, 14)
         }
     }
 }

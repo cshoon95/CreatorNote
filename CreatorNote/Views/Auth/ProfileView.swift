@@ -5,8 +5,9 @@ struct ProfileView: View {
 
     @State private var displayName = ""
     @State private var isLoading = false
-    @State private var isSigningOut = false
-    @State private var showSignOutConfirmation = false
+    @State private var isEditing = false
+    @State private var editingName = ""
+    @State private var isSaving = false
     @State private var showDeleteConfirmation = false
     @State private var isDeleting = false
     @State private var errorMessage: String?
@@ -18,7 +19,8 @@ struct ProfileView: View {
         ScrollView {
             VStack(spacing: 20) {
                 profileHeader(theme: theme)
-                signOutSection(theme: theme)
+                nicknameSection(theme: theme)
+                Spacer().frame(height: 40)
                 deleteAccountSection(theme: theme)
             }
             .padding()
@@ -26,14 +28,6 @@ struct ProfileView: View {
         .background(theme.background)
         .navigationTitle("프로필")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("로그아웃", isPresented: $showSignOutConfirmation, titleVisibility: .visible) {
-            Button("로그아웃", role: .destructive) {
-                Task { await signOut() }
-            }
-            Button("취소", role: .cancel) { }
-        } message: {
-            Text("정말 로그아웃 하시겠습니까?")
-        }
         .confirmationDialog("계정 탈퇴", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
             Button("탈퇴하기", role: .destructive) {
                 Task { await deleteAccount() }
@@ -63,11 +57,11 @@ struct ProfileView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .fill(theme.primary)
                     .frame(width: 80, height: 80)
                     .shadow(color: theme.primary.opacity(0.3), radius: 12, x: 0, y: 6)
 
-                Text(String(displayName.prefix(1)).uppercased())
+                Text(String((displayName.isEmpty ? "사" : displayName).prefix(1)).uppercased())
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
             }
@@ -79,34 +73,64 @@ struct ProfileView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 
-    private func signOutSection(theme: AppTheme) -> some View {
-        Button {
-            showSignOutConfirmation = true
-        } label: {
-            HStack(spacing: 8) {
-                if isSigningOut {
-                    ProgressView()
-                        .tint(.red)
-                        .scaleEffect(0.8)
+    private func nicknameSection(theme: AppTheme) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("닉네임")
+                .font(.caption.bold())
+                .foregroundStyle(theme.textSecondary)
+
+            if isEditing {
+                HStack(spacing: 10) {
+                    TextField("닉네임을 입력하세요", text: $editingName)
+                        .font(.system(.body, design: .rounded))
+                        .foregroundStyle(theme.textPrimary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(theme.surfaceBackground)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    Button {
+                        Task { await saveNickname() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Text("저장")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(editingName.trimmingCharacters(in: .whitespaces).isEmpty ? .gray : theme.primary)
+                        }
+                    }
+                    .disabled(editingName.trimmingCharacters(in: .whitespaces).isEmpty || isSaving)
+
+                    Button {
+                        isEditing = false
+                    } label: {
+                        Text("취소")
+                            .font(.subheadline)
+                            .foregroundStyle(theme.textSecondary)
+                    }
                 }
-                Image(systemName: "rectangle.portrait.and.arrow.right")
-                Text("로그아웃")
-                    .font(.system(.body, design: .rounded))
-                    .fontWeight(.medium)
+            } else {
+                HStack {
+                    Text(displayName.isEmpty ? "사용자" : displayName)
+                        .font(.system(.body, design: .rounded))
+                        .foregroundStyle(theme.textPrimary)
+                    Spacer()
+                    Button {
+                        editingName = displayName
+                        isEditing = true
+                    } label: {
+                        Text("변경")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(theme.primary)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
             }
-            .foregroundStyle(.red)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.red.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-        .disabled(isSigningOut)
-        .padding(.top, 8)
     }
 
     private func deleteAccountSection(theme: AppTheme) -> some View {
@@ -140,10 +164,20 @@ struct ProfileView: View {
         }
     }
 
-    private func signOut() async {
-        isSigningOut = true
-        defer { isSigningOut = false }
-        await AuthManager.shared.signOut()
+    private func saveNickname() async {
+        let trimmed = editingName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return }
+        isSaving = true
+        defer { isSaving = false }
+        await AuthManager.shared.updateDisplayName(trimmed)
+        if AuthManager.shared.errorMessage == nil {
+            displayName = trimmed
+            isEditing = false
+            ToastManager.shared.show("닉네임이 변경되었습니다")
+        } else {
+            errorMessage = AuthManager.shared.errorMessage
+            showError = true
+        }
     }
 
     private func deleteAccount() async {

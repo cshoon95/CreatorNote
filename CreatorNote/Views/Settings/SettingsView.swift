@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @State private var showLogoutConfirmation = false
 
     var body: some View {
         let theme = themeManager.theme
@@ -10,6 +11,7 @@ struct SettingsView: View {
                 profileHeroCard(theme: theme)
                 workspaceCard(theme: theme)
                 themeCard(theme: theme)
+                logoutButton(theme: theme)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
@@ -18,6 +20,14 @@ struct SettingsView: View {
         .navigationTitle("설정")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(themeManager.resolvedColorScheme)
+        .confirmationDialog("로그아웃", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
+            Button("로그아웃", role: .destructive) {
+                Task { await AuthManager.shared.signOut() }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("정말 로그아웃 하시겠습니까?")
+        }
     }
 
     private func profileHeroCard(theme: AppTheme) -> some View {
@@ -25,12 +35,8 @@ struct SettingsView: View {
             ProfileView()
         } label: {
             ZStack {
-                LinearGradient(
-                    colors: theme.gradient,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 24))
+                theme.primary
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
 
                 HStack(spacing: 18) {
                     ZStack {
@@ -72,7 +78,7 @@ struct SettingsView: View {
                 .padding(.vertical, 24)
             }
             .contentShape(Rectangle())
-            .shadow(color: theme.gradient.first?.opacity(0.25) ?? .clear, radius: 20, x: 0, y: 10)
+            .shadow(color: theme.primary.opacity(0.25), radius: 20, x: 0, y: 10)
         }
         .buttonStyle(.plain)
     }
@@ -84,13 +90,7 @@ struct SettingsView: View {
             HStack(spacing: 16) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(
-                            LinearGradient(
-                                colors: theme.gradient,
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(theme.primary)
                         .frame(width: 48, height: 48)
 
                     Image(systemName: "rectangle.3.group.fill")
@@ -165,11 +165,7 @@ struct SettingsView: View {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 22)
                                     .fill(
-                                        LinearGradient(
-                                            colors: t.gradient,
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
+                                        t.primary
                                     )
                                     .frame(height: 96)
 
@@ -186,7 +182,7 @@ struct SettingsView: View {
                                     )
                             )
                             .shadow(
-                                color: isSelected ? (t.gradient.first?.opacity(0.4) ?? .clear) : .black.opacity(0.06),
+                                color: isSelected ? t.primary.opacity(0.4) : .black.opacity(0.06),
                                 radius: isSelected ? 10 : 4,
                                 x: 0,
                                 y: isSelected ? 4 : 2
@@ -212,20 +208,14 @@ struct SettingsView: View {
         HStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(
-                        LinearGradient(
-                            colors: theme.gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(theme.primary)
                     .frame(width: 56, height: 56)
 
                 Image(systemName: "sparkles.rectangle.stack")
                     .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(.white)
             }
-            .shadow(color: theme.gradient.first?.opacity(0.3) ?? .clear, radius: 8, x: 0, y: 3)
+            .shadow(color: theme.primary.opacity(0.3), radius: 8, x: 0, y: 3)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Influe")
@@ -257,28 +247,17 @@ struct SettingsView: View {
 
     private func logoutButton(theme: AppTheme) -> some View {
         Button {
-            Task { await AuthManager.shared.signOut() }
+            showLogoutConfirmation = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                    .font(.system(size: 18, weight: .semibold))
-
                 Text("로그아웃")
                     .font(.system(.body, design: .rounded))
-                    .fontWeight(.semibold)
+                    .fontWeight(.medium)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
-            .frame(height: 56)
-            .background(
-                LinearGradient(
-                    colors: [Color(hex: "FF4B4B"), Color(hex: "FF2D55")],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .shadow(color: Color(hex: "FF2D55").opacity(0.25), radius: 12, x: 0, y: 5)
+            .padding(.vertical, 14)
         }
         .padding(.bottom, 12)
     }

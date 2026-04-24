@@ -8,6 +8,7 @@ final class WorkspaceManager {
     var currentWorkspace: Workspace?
     var workspaces: [Workspace] = []
     var members: [Profile] = []
+    var pendingMembers: [Profile] = []
     var isLoading: Bool = false
     var errorMessage: String?
 
@@ -94,22 +95,54 @@ final class WorkspaceManager {
     }
 
     func joinWithCode(_ code: String) async -> Bool {
+        guard let userId = AuthManager.shared.currentUser?.id else { return false }
+
+        // 이미 워크스페이스에 속해있는지 확인
+        if currentWorkspace != nil {
+            errorMessage = "이미 워크스페이스에 참여중입니다. 기존 워크스페이스를 나간 후 다시 시도하세요."
+            return false
+        }
+
         isLoading = true
         defer { isLoading = false }
         do {
-            let result: String = try await supabase
-                .rpc("join_workspace_by_invite", params: ["invite_code": code])
+            // 초대코드로 워크스페이스 ID 조회
+            struct InviteRow: Codable {
+                let workspaceId: UUID
+                enum CodingKeys: String, CodingKey {
+                    case workspaceId = "workspace_id"
+                }
+            }
+            let invites: [InviteRow] = try await supabase
+                .from("invite_codes")
+                .select("workspace_id")
+                .eq("code", value: code)
+                .gt("expires_at", value: ISO8601DateFormatter().string(from: Date()))
                 .execute()
                 .value
-            if let uuid = UUID(uuidString: result.replacingOccurrences(of: "\"", with: "")) {
-                await selectWorkspace(id: uuid)
-                await fetchWorkspaces()
-                return true
+
+            guard let invite = invites.first else {
+                errorMessage = "유효하지 않은 초대 코드입니다"
+                return false
             }
-            errorMessage = "워크스페이스 참여에 실패했습니다"
-            return false
+
+            // pending 상태로 멤버 추가
+            let membership = WorkspaceMemberInsert(workspaceId: invite.workspaceId, userId: userId, role: "member")
+            try await supabase.from("workspace_members")
+                .insert(membership)
+                .execute()
+
+            // status를 pending으로 설정
+            try await supabase.from("workspace_members")
+                .update(["status": "pending"])
+                .eq("workspace_id", value: invite.workspaceId.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+
+            ToastManager.shared.show("참여 요청을 보냈습니다. 방장의 승인을 기다려주세요.", icon: "clock.fill")
+            return true
         } catch {
-            errorMessage = "유효하지 않은 초대 코드입니다"
+            errorMessage = "참여 요청에 실패했습니다"
             return false
         }
     }
@@ -120,29 +153,107 @@ final class WorkspaceManager {
             struct MemberRow: Codable {
                 let userId: UUID
                 let role: String
+                let status: String
                 enum CodingKeys: String, CodingKey {
                     case userId = "user_id"
                     case role
+                    case status
                 }
             }
             let memberRows: [MemberRow] = try await supabase
                 .from("workspace_members")
-                .select("user_id, role")
+                .select("user_id, role, status")
                 .eq("workspace_id", value: workspace.id.uuidString)
                 .execute()
                 .value
-            let userIds = memberRows.map(\.userId)
-            if !userIds.isEmpty {
+
+            let approvedIds = memberRows.filter { $0.status == "approved" }.map(\.userId)
+            let pendingIds = memberRows.filter { $0.status == "pending" }.map(\.userId)
+
+            if !approvedIds.isEmpty {
                 let profiles: [Profile] = try await supabase
                     .from("profiles")
                     .select()
-                    .in("id", values: userIds.map(\.uuidString))
+                    .in("id", values: approvedIds.map(\.uuidString))
                     .execute()
                     .value
                 members = profiles
+            } else {
+                members = []
+            }
+
+            if !pendingIds.isEmpty {
+                let profiles: [Profile] = try await supabase
+                    .from("profiles")
+                    .select()
+                    .in("id", values: pendingIds.map(\.uuidString))
+                    .execute()
+                    .value
+                pendingMembers = profiles
+            } else {
+                pendingMembers = []
             }
         } catch {
             members = []
+            pendingMembers = []
+        }
+    }
+
+    func approveMember(userId: UUID) async {
+        guard let workspace = currentWorkspace,
+              workspace.ownerId == AuthManager.shared.currentUser?.id else { return }
+        do {
+            try await supabase
+                .from("workspace_members")
+                .update(["status": "approved"])
+                .eq("workspace_id", value: workspace.id.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+            await fetchMembers()
+            ToastManager.shared.show("멤버를 승인했습니다", icon: "person.fill.checkmark")
+        } catch {
+            errorMessage = "멤버 승인에 실패했습니다"
+        }
+    }
+
+    func rejectMember(userId: UUID) async {
+        guard let workspace = currentWorkspace,
+              workspace.ownerId == AuthManager.shared.currentUser?.id else { return }
+        do {
+            try await supabase
+                .from("workspace_members")
+                .delete()
+                .eq("workspace_id", value: workspace.id.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+            await fetchMembers()
+            ToastManager.shared.show("참여 요청을 거절했습니다", icon: "person.fill.xmark")
+        } catch {
+            errorMessage = "요청 거절에 실패했습니다"
+        }
+    }
+
+    func removeMember(userId: UUID) async {
+        guard let workspace = currentWorkspace,
+              workspace.ownerId == AuthManager.shared.currentUser?.id else {
+            errorMessage = "방장만 멤버를 추방할 수 있습니다"
+            return
+        }
+        guard userId != workspace.ownerId else {
+            errorMessage = "방장은 추방할 수 없습니다"
+            return
+        }
+        do {
+            try await supabase
+                .from("workspace_members")
+                .delete()
+                .eq("workspace_id", value: workspace.id.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+            await fetchMembers()
+            ToastManager.shared.show("멤버가 추방되었습니다", icon: "person.fill.xmark")
+        } catch {
+            errorMessage = "멤버 추방에 실패했습니다"
         }
     }
 

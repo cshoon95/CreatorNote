@@ -174,6 +174,7 @@ final class AuthManager {
                 let name = displayName
                     ?? user.userMetadata["full_name"]?.value as? String
                     ?? user.userMetadata["name"]?.value as? String
+                    ?? "사용자"
                 let newProfile = Profile(
                     id: user.id,
                     displayName: name,
@@ -189,6 +190,23 @@ final class AuthManager {
             }
         } catch {
             errorMessage = "프로필 로딩에 실패했습니다: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Update Profile
+
+    func updateDisplayName(_ name: String) async {
+        guard let userId = currentUser?.id else { return }
+        errorMessage = nil
+        do {
+            try await supabase
+                .from("profiles")
+                .update(["display_name": name])
+                .eq("id", value: userId.uuidString)
+                .execute()
+            currentProfile?.displayName = name
+        } catch {
+            errorMessage = "닉네임 변경에 실패했습니다: \(error.localizedDescription)"
         }
     }
 

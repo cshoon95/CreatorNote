@@ -71,7 +71,7 @@ struct SponsorshipDetailView: View {
                     VStack(spacing: 16) {
                         HStack(spacing: 14) {
                             Circle()
-                                .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .fill(theme.primary)
                                 .frame(width: 56, height: 56)
                                 .overlay {
                                     Text(String(sponsorship.brandName.prefix(1)))
@@ -183,8 +183,6 @@ struct SponsorshipDetailView: View {
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(.red.opacity(0.08))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 20)

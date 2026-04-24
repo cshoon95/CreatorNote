@@ -105,8 +105,6 @@ struct ReelsNoteListView: View {
                         .foregroundStyle(theme.textSecondary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(theme.surfaceBackground)
-                        .clipShape(Capsule())
                     }
                     .padding(.trailing, 16)
                 }
@@ -136,16 +134,16 @@ struct ReelsNoteListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
             Button { showingNewNote = true } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(.white)
+                Circle()
+                    .fill(theme.primary)
                     .frame(width: 56, height: 56)
-                    .background(
-                        LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .clipShape(Circle())
-                    .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
+                    .overlay {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
             }
+            .buttonStyle(.plain)
             .padding(20)
         }
         .sheet(item: $selectedNote) { note in

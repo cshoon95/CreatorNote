@@ -70,15 +70,16 @@ struct GeneralNoteListView: View {
             Button {
                 showingNewNote = true
             } label: {
-                Image(systemName: "plus")
-                    .font(.title3)
-                    .foregroundStyle(theme.primary)
-                    .frame(width: 52, height: 52)
-                    .background(theme.cardBackground)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
-                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
+                Circle()
+                    .fill(theme.primary)
+                    .frame(width: 56, height: 56)
+                    .overlay {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
             }
+            .buttonStyle(.plain)
             .padding(20)
         }
         .sheet(item: $selectedNote) { note in

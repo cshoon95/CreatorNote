@@ -119,6 +119,32 @@ struct SponsorshipFormView: View {
                         }
                     }
 
+                    // 등록자·수정자
+                    if editingSponsorship?.createdBy != nil || editingSponsorship?.updatedBy != nil {
+                        sectionCard(title: "작성 정보", theme: theme) {
+                            HStack(spacing: 12) {
+                                if let createdBy = editingSponsorship?.createdBy {
+                                    HStack(spacing: 4) {
+                                        Text("등록")
+                                            .font(.caption2)
+                                            .foregroundStyle(theme.textSecondary)
+                                        MemberChip(userId: createdBy)
+                                    }
+                                }
+                                if let updatedBy = editingSponsorship?.updatedBy {
+                                    HStack(spacing: 4) {
+                                        Text("수정")
+                                            .font(.caption2)
+                                            .foregroundStyle(theme.textSecondary)
+                                        MemberChip(userId: updatedBy)
+                                    }
+                                }
+                                Spacer()
+                            }
+                            .padding(16)
+                        }
+                    }
+
                     // 세부 내용
                     sectionCard(title: "세부 내용", theme: theme) {
                         TextEditor(text: $details)
@@ -221,6 +247,7 @@ struct SponsorshipFormView: View {
             updated.endDate = endDate
             updated.status = status.rawValue
             updated.updatedAt = .now
+            updated.updatedBy = AuthManager.shared.currentUser?.id
             await DataManager.shared.updateSponsorship(updated)
         } else {
             await DataManager.shared.createSponsorship(

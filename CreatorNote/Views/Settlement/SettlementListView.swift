@@ -76,16 +76,16 @@ struct SettlementListView: View {
                 .refreshable { await DataManager.shared.fetchSettlements() }
 
                 Button { showingAddSheet = true } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
+                    Circle()
+                        .fill(theme.primary)
                         .frame(width: 56, height: 56)
-                        .background(
-                            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
+                        .overlay {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
                 }
+                .buttonStyle(.plain)
                 .padding(20)
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -163,7 +163,7 @@ struct SettlementListView: View {
             .padding(.vertical, 18)
         }
         .background(
-            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
+            theme.primary
         )
         .clipShape(RoundedRectangle(cornerRadius: 28))
         .shadow(color: theme.primary.opacity(0.25), radius: 20, y: 8)
@@ -226,6 +226,9 @@ struct SettlementListView: View {
                 Text(item.isPaid ? "지급 완료" : "대기중")
                     .font(.caption.bold())
                     .foregroundStyle(item.isPaid ? .green : .orange)
+                if let createdBy = item.createdBy {
+                    MemberChip(userId: createdBy)
+                }
             }
         }
         .padding(16)

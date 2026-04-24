@@ -83,18 +83,9 @@ struct OnboardingView: View {
                     } label: {
                         Text("시작하기")
                             .font(.headline)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(theme.primary)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(
-                                LinearGradient(
-                                    colors: theme.gradient,
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .clipShape(RoundedRectangle(cornerRadius: 18))
-                            .shadow(color: theme.primary.opacity(0.35), radius: 12, y: 6)
                     }
                     .padding(.horizontal, 32)
                     .padding(.bottom, 48)
@@ -112,18 +103,9 @@ struct OnboardingView: View {
                             Image(systemName: "arrow.right")
                                 .font(.subheadline.bold())
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.primary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 56)
-                        .background(
-                            LinearGradient(
-                                colors: theme.gradient,
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: 18))
-                        .shadow(color: theme.primary.opacity(0.35), radius: 12, y: 6)
                     }
                     .padding(.horizontal, 32)
                     .padding(.bottom, 48)
@@ -155,13 +137,7 @@ private struct OnboardingPageView: View {
             // Gradient icon circle
             ZStack {
                 Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: theme.gradient,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
+                    .fill(theme.primary)
                     .frame(width: 140, height: 140)
                     .shadow(color: theme.primary.opacity(0.35), radius: 24, y: 12)
 

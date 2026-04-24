@@ -199,13 +199,7 @@ struct SettlementReportView: View {
                             x: .value("월", item.label),
                             y: .value("금액", item.amount)
                         )
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: theme.gradient,
-                                startPoint: .bottom,
-                                endPoint: .top
-                            )
-                        )
+                        .foregroundStyle(theme.primary)
                         .cornerRadius(6)
                     }
                 }

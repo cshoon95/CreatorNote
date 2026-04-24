@@ -9,7 +9,7 @@ struct GradientAvatarView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(gradient.first ?? .blue)
                 .frame(width: size, height: size)
             Text(String(text.prefix(1)))
                 .font(font)

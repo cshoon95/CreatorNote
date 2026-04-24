@@ -12,6 +12,7 @@ struct SettlementDTO: Codable, Identifiable, Sendable {
     var isPaid: Bool
     var memo: String
     var createdBy: UUID?
+    var updatedBy: UUID?
     var createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -22,6 +23,7 @@ struct SettlementDTO: Codable, Identifiable, Sendable {
         case settlementDate = "settlement_date"
         case isPaid = "is_paid"
         case createdBy = "created_by"
+        case updatedBy = "updated_by"
         case createdAt = "created_at"
     }
 

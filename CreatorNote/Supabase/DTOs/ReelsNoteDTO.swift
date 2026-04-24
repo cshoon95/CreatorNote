@@ -11,6 +11,7 @@ struct ReelsNoteDTO: Codable, Identifiable, Sendable {
     var tags: [String]
     var isPinned: Bool
     var createdBy: UUID?
+    var updatedBy: UUID?
     var createdAt: Date
     var updatedAt: Date
 
@@ -22,6 +23,7 @@ struct ReelsNoteDTO: Codable, Identifiable, Sendable {
         case sponsorshipId = "sponsorship_id"
         case isPinned = "is_pinned"
         case createdBy = "created_by"
+        case updatedBy = "updated_by"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

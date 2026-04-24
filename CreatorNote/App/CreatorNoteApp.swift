@@ -68,12 +68,8 @@ struct SplashView: View {
     var body: some View {
         let theme = themeManager.theme
         ZStack {
-            LinearGradient(
-                colors: theme.gradient,
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            theme.primary
+                .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 Spacer()

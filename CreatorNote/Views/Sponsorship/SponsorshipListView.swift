@@ -81,16 +81,16 @@ struct SponsorshipListView: View {
                 .refreshable { await DataManager.shared.fetchSponsorships() }
 
                 Button { showingAddSheet = true } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(.white)
+                    Circle()
+                        .fill(theme.primary)
                         .frame(width: 56, height: 56)
-                        .background(
-                            LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: theme.primary.opacity(0.35), radius: 12, x: 0, y: 6)
+                        .overlay {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
                 }
+                .buttonStyle(.plain)
                 .padding(20)
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -101,7 +101,7 @@ struct SponsorshipListView: View {
     private func sponsorshipCard(_ item: SponsorshipDTO, theme: AppTheme) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
-                GradientAvatarView(text: item.brandName, gradient: theme.gradient)
+                GradientAvatarView(text: item.brandName, gradient: [theme.primary])
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.brandName)
@@ -139,6 +139,14 @@ struct SponsorshipListView: View {
                 }
                 .padding(.top, 10)
             }
+
+            HStack(spacing: 8) {
+                if let createdBy = item.createdBy {
+                    MemberChip(userId: createdBy)
+                }
+                Spacer()
+            }
+            .padding(.top, 6)
         }
         .padding(16)
         .background(theme.cardBackground)

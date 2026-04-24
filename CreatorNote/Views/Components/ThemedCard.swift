@@ -96,9 +96,7 @@ struct MemberChip: View {
         let theme = themeManager.theme
         HStack(spacing: 4) {
             Circle()
-                .fill(theme.gradient.count >= 2 ?
-                    LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing) :
-                    LinearGradient(colors: [theme.primary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .fill(theme.primary)
                 .frame(width: 16, height: 16)
                 .overlay {
                     Text(initial)

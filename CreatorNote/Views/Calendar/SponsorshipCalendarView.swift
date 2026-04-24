@@ -147,7 +147,7 @@ struct SponsorshipCalendarView: View {
                                 .frame(width: 36, height: 40)
                                 .background(
                                     isSelected ?
-                                        AnyShapeStyle(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)) :
+                                        AnyShapeStyle(theme.primary) :
                                         AnyShapeStyle(Color.clear)
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -171,7 +171,7 @@ struct SponsorshipCalendarView: View {
                                 ThemedCard {
                                     HStack {
                                         Circle()
-                                            .fill(LinearGradient(colors: theme.gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                                            .fill(theme.primary)
                                             .frame(width: 32, height: 32)
                                             .overlay {
                                                 Text(String(s.brandName.prefix(1)))
@@ -222,15 +222,16 @@ struct SponsorshipCalendarView: View {
             .background(theme.background)
 
             Button { showingAddSheet = true } label: {
-                Image(systemName: "plus")
-                    .font(.title3)
-                    .foregroundStyle(theme.primary)
-                    .frame(width: 52, height: 52)
-                    .background(theme.cardBackground)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.08), radius: 8, y: 2)
-                    .overlay(Circle().stroke(theme.divider, lineWidth: 0.5))
+                Circle()
+                    .fill(theme.primary)
+                    .frame(width: 56, height: 56)
+                    .overlay {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
             }
+            .buttonStyle(.plain)
             .padding(20)
 
             } // ZStack

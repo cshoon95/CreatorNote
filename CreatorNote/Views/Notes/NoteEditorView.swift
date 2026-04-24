@@ -37,6 +37,20 @@ struct NoteEditorView: View {
         return false
     }
 
+    private var existingCreatedBy: UUID? {
+        switch mode {
+        case .reels(let note): return note?.createdBy
+        case .general(let note): return note?.createdBy
+        }
+    }
+
+    private var existingUpdatedBy: UUID? {
+        switch mode {
+        case .reels(let note): return note?.updatedBy
+        case .general(let note): return note?.updatedBy
+        }
+    }
+
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
@@ -49,6 +63,31 @@ struct NoteEditorView: View {
                         .padding(.horizontal, 20)
                         .padding(.top, 20)
                         .padding(.bottom, 12)
+
+                    // 등록자·수정자 표시
+                    if existingCreatedBy != nil || existingUpdatedBy != nil {
+                        HStack(spacing: 12) {
+                            if let createdBy = existingCreatedBy {
+                                HStack(spacing: 4) {
+                                    Text("등록")
+                                        .font(.caption2)
+                                        .foregroundStyle(theme.textSecondary)
+                                    MemberChip(userId: createdBy)
+                                }
+                            }
+                            if let updatedBy = existingUpdatedBy {
+                                HStack(spacing: 4) {
+                                    Text("수정")
+                                        .font(.caption2)
+                                        .foregroundStyle(theme.textSecondary)
+                                    MemberChip(userId: updatedBy)
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 8)
+                    }
 
                     if isReelsMode {
                         reelsControls(theme: theme)
@@ -158,7 +197,7 @@ struct NoteEditorView: View {
             }
             .padding(.horizontal, 20)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, 14)
 
         // Tag row
         ScrollView(.horizontal, showsIndicators: false) {
@@ -253,6 +292,7 @@ struct NoteEditorView: View {
                 updated.status = status.rawValue
                 updated.tags = tags
                 updated.updatedAt = .now
+                updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateReelsNote(updated)
             } else {
                 _ = await DataManager.shared.createReelsNote(
@@ -269,6 +309,7 @@ struct NoteEditorView: View {
                 updated.plainContent = plainContent
                 updated.attributedContent = rtfBase64
                 updated.updatedAt = .now
+                updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateGeneralNote(updated)
             } else {
                 _ = await DataManager.shared.createGeneralNote(
