@@ -8,6 +8,8 @@ struct PendingApprovalView: View {
     private let timer = Timer.publish(every: 10, on: .main, in: .common).autoconnect()
     private let dotTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
+    var onSkip: (() -> Void)?
+
     private var workspaceName: String {
         WorkspaceManager.shared.pendingWorkspace?.name ?? "워크스페이스"
     }
@@ -95,6 +97,20 @@ struct PendingApprovalView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                     .disabled(isChecking)
+
+                    if let onSkip {
+                        Button {
+                            onSkip()
+                        } label: {
+                            Text("홈으로 이동")
+                                .font(.system(.body, design: .rounded).bold())
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(theme.primary)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                        }
+                    }
 
                     Button(role: .destructive) {
                         showCancelAlert = true

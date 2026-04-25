@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var selectedTab: Tab = .home
+    @State private var navigationResetID = UUID()
 
     enum Tab: String, CaseIterable {
         case home = "홈"
@@ -24,12 +25,13 @@ struct ContentView: View {
 
     var body: some View {
         let theme = themeManager.theme
-        TabView(selection: $selectedTab) {
+        TabView(selection: tabSelection) {
             ForEach(Tab.allCases, id: \.self) { tab in
                 Group {
                     switch tab {
                     case .home:
                         DashboardView()
+                            .id(tab == .home ? navigationResetID : UUID())
                     case .sponsorship:
                         SponsorshipListView()
                     case .settlement:
@@ -65,5 +67,18 @@ struct ContentView: View {
         .task {
             await DataManager.shared.fetchAll()
         }
+    }
+
+    private var tabSelection: Binding<Tab> {
+        Binding(
+            get: { selectedTab },
+            set: { newTab in
+                if newTab == selectedTab {
+                    // 같은 탭 재선택 → 루트로 리셋
+                    navigationResetID = UUID()
+                }
+                selectedTab = newTab
+            }
+        )
     }
 }

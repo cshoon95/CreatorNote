@@ -216,7 +216,7 @@ struct SponsorshipCalendarView: View {
                         }
                     }
                 }
-                .padding(.top)
+                .padding(.top, 16)
                 .padding(.bottom, 90)
             }
             .background(theme.background)

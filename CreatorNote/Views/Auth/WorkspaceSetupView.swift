@@ -2,86 +2,106 @@ import SwiftUI
 
 struct WorkspaceSetupView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @State private var selectedTab = 0
+    @Environment(\.dismiss) private var dismiss
+    @State private var mode: SetupMode = .none
     @State private var workspaceName = ""
     @State private var inviteCode = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showError = false
-    @FocusState private var workspaceNameFocused: Bool
-    @FocusState private var inviteCodeFocused: Bool
+    @FocusState private var fieldFocused: Bool
+
+    enum SetupMode {
+        case none, create, join
+    }
 
     var onComplete: () -> Void
 
     var body: some View {
         let theme = themeManager.theme
 
-        ZStack(alignment: .top) {
-            theme.background
-                .ignoresSafeArea()
-
-            theme.primary
-                .frame(height: 240)
-                .ignoresSafeArea(edges: .top)
-
+        ScrollView {
             VStack(spacing: 0) {
-                VStack(spacing: 10) {
-                    Spacer().frame(height: 56)
+                // Top illustration
+                VStack(spacing: 16) {
+                    Spacer().frame(height: 48)
 
-                    Image(systemName: "person.2.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+                    ZStack {
+                        Circle()
+                            .fill(theme.primary.opacity(0.1))
+                            .frame(width: 100, height: 100)
+                        Image(systemName: "person.2.fill")
+                            .font(.system(size: 40))
+                            .foregroundStyle(theme.primary)
+                    }
 
-                    Text("워크스페이스 설정")
-                        .font(.system(.largeTitle, design: .rounded).bold())
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                    Text("워크스페이스")
+                        .font(.system(.title, design: .rounded).bold())
+                        .foregroundStyle(theme.textPrimary)
 
-                    Text("함께 사용할 공간을 만들어요")
+                    Text("팀원과 함께 협찬을 관리할 공간이에요")
                         .font(.system(.subheadline, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(.black.opacity(0.15))
-                        .clipShape(Capsule())
+                        .foregroundStyle(theme.textSecondary)
 
-                    Spacer().frame(height: 24)
+                    Spacer().frame(height: 8)
                 }
-                .frame(height: 240)
 
-                VStack(spacing: 28) {
-                    Picker("", selection: $selectedTab) {
-                        Text("새로 만들기").tag(0)
-                        Text("초대 코드 입력").tag(1)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 4)
-
-                    if selectedTab == 0 {
-                        createSection(theme: theme)
-                    } else {
-                        joinSection(theme: theme)
+                // Cards
+                VStack(spacing: 14) {
+                    // Create card
+                    optionCard(
+                        icon: "plus.square.fill",
+                        title: "새 워크스페이스 만들기",
+                        subtitle: "직접 만들고 팀원을 초대하세요",
+                        isSelected: mode == .create,
+                        theme: theme
+                    ) {
+                        withAnimation(.spring(duration: 0.35)) {
+                            mode = mode == .create ? .none : .create
+                            fieldFocused = mode == .create
+                        }
                     }
 
-                    Spacer()
+                    if mode == .create {
+                        createForm(theme: theme)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
+
+                    // Join card
+                    optionCard(
+                        icon: "ticket.fill",
+                        title: "초대 코드로 참여하기",
+                        subtitle: "받은 코드를 입력해 합류하세요",
+                        isSelected: mode == .join,
+                        theme: theme
+                    ) {
+                        withAnimation(.spring(duration: 0.35)) {
+                            mode = mode == .join ? .none : .join
+                            fieldFocused = mode == .join
+                        }
+                    }
+
+                    if mode == .join {
+                        joinForm(theme: theme)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
-                .padding(.top, 28)
-                .padding(.horizontal, 24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(
-                    theme.cardBackground
-                        .clipShape(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 28,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 28
-                            )
-                        )
-                )
+                .padding(.horizontal, 20)
+
+                Spacer().frame(height: 40)
+
+                Button {
+                    onComplete()
+                } label: {
+                    Text("나중에 할게요")
+                        .font(.system(.footnote, design: .rounded))
+                        .foregroundStyle(theme.textSecondary.opacity(0.7))
+                        .underline()
+                }
+                .padding(.bottom, 40)
             }
         }
+        .background(theme.background.ignoresSafeArea())
         .preferredColorScheme(theme.colorScheme)
         .alert("오류", isPresented: $showError) {
             Button("확인", role: .cancel) {}
@@ -90,137 +110,162 @@ struct WorkspaceSetupView: View {
         }
     }
 
-    private func createSection(theme: AppTheme) -> some View {
-        VStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("워크스페이스 이름")
-                    .font(.system(.caption, design: .rounded).bold())
-                    .foregroundStyle(theme.textSecondary)
+    // MARK: - Option Card
 
-                HStack {
-                    Image(systemName: "building.2")
-                        .font(.system(size: 16))
-                        .foregroundStyle(theme.primary.opacity(0.7))
-                    TextField("예: 우리집 크리에이터", text: $workspaceName)
-                        .textFieldStyle(.plain)
-                        .focused($workspaceNameFocused)
-                        .font(.system(.body, design: .rounded))
-                        .foregroundStyle(theme.textPrimary)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(theme.surfaceBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .contentShape(RoundedRectangle(cornerRadius: 14))
-                .onTapGesture { workspaceNameFocused = true }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(
-                            workspaceNameFocused
-                                ? LinearGradient(colors: [theme.primary], startPoint: .leading, endPoint: .trailing)
-                                : LinearGradient(colors: [Color.clear], startPoint: .leading, endPoint: .trailing),
-                            lineWidth: 1.5
-                        )
-                )
-                .animation(.easeInOut(duration: 0.2), value: workspaceNameFocused)
-            }
-
-            actionButton(
-                label: "워크스페이스 만들기",
-                icon: "sparkles",
-                theme: theme,
-                disabled: workspaceName.trimmingCharacters(in: .whitespaces).isEmpty
-            ) {
-                Task { await createWorkspace() }
-            }
-        }
-    }
-
-    private func joinSection(theme: AppTheme) -> some View {
-        VStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("초대 코드")
-                    .font(.system(.caption, design: .rounded).bold())
-                    .foregroundStyle(theme.textSecondary)
-
-                HStack {
-                    Image(systemName: "key.fill")
-                        .font(.system(size: 16))
-                        .foregroundStyle(theme.primary.opacity(0.7))
-                    TextField("6자리 코드 입력", text: $inviteCode)
-                        .textFieldStyle(.plain)
-                        .textInputAutocapitalization(.characters)
-                        .focused($inviteCodeFocused)
-                        .font(.system(.body, design: .rounded).monospacedDigit())
-                        .foregroundStyle(theme.textPrimary)
-                        .kerning(inviteCode.isEmpty ? 0 : 3)
-                        .onChange(of: inviteCode) { _, newValue in
-                            inviteCode = String(newValue.prefix(6)).uppercased()
-                        }
-
-                    if !inviteCode.isEmpty {
-                        Text("\(inviteCode.count)/6")
-                            .font(.system(.caption2, design: .rounded))
-                            .foregroundStyle(inviteCode.count == 6 ? theme.primary : theme.textSecondary)
-                            .animation(.easeInOut, value: inviteCode.count)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(theme.surfaceBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .contentShape(RoundedRectangle(cornerRadius: 14))
-                .onTapGesture { inviteCodeFocused = true }
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(
-                            inviteCodeFocused
-                                ? LinearGradient(colors: [theme.primary], startPoint: .leading, endPoint: .trailing)
-                                : LinearGradient(colors: [Color.clear], startPoint: .leading, endPoint: .trailing),
-                            lineWidth: 1.5
-                        )
-                )
-                .animation(.easeInOut(duration: 0.2), value: inviteCodeFocused)
-            }
-
-            actionButton(
-                label: "참여하기",
-                icon: "arrow.right.circle.fill",
-                theme: theme,
-                disabled: inviteCode.count != 6
-            ) {
-                Task { await joinWorkspace() }
-            }
-        }
-    }
-
-    private func actionButton(
-        label: String,
+    private func optionCard(
         icon: String,
+        title: String,
+        subtitle: String,
+        isSelected: Bool,
         theme: AppTheme,
-        disabled: Bool,
         action: @escaping () -> Void
     ) -> some View {
-        let isDisabled = disabled || isLoading
-        return Button(action: action) {
-            HStack(spacing: 8) {
-                if isLoading {
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(0.9)
-                } else {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(isSelected ? theme.primary : theme.primary.opacity(0.1))
+                        .frame(width: 48, height: 48)
                     Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: 20))
+                        .foregroundStyle(isSelected ? .white : theme.primary)
                 }
-                Text(label)
-                    .font(.system(.body, design: .rounded).bold())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(.body, design: .rounded).bold())
+                        .foregroundStyle(theme.textPrimary)
+                    Text(subtitle)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(theme.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "chevron.up" : "chevron.down")
+                    .font(.caption.bold())
+                    .foregroundStyle(theme.textSecondary)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .foregroundStyle(isDisabled ? theme.primary.opacity(0.4) : theme.primary)
+            .padding(16)
+            .background(theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(isSelected ? theme.primary.opacity(0.3) : theme.divider, lineWidth: 1)
+            )
+            .shadow(color: isSelected ? theme.primary.opacity(0.08) : .clear, radius: 8, y: 4)
         }
-        .disabled(isDisabled)
+        .buttonStyle(.plain)
     }
+
+    // MARK: - Create Form
+
+    private func createForm(theme: AppTheme) -> some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: "building.2")
+                    .font(.system(size: 15))
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 20)
+                TextField("워크스페이스 이름을 입력하세요", text: $workspaceName)
+                    .textFieldStyle(.plain)
+                    .focused($fieldFocused)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(theme.textPrimary)
+            }
+            .padding(16)
+            .background(theme.surfaceBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(fieldFocused && mode == .create ? theme.primary.opacity(0.5) : .clear, lineWidth: 1.5)
+            )
+
+            Button {
+                Task { await createWorkspace() }
+            } label: {
+                HStack(spacing: 8) {
+                    if isLoading {
+                        ProgressView().tint(.white).scaleEffect(0.85)
+                    } else {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    Text("만들기")
+                        .font(.system(.body, design: .rounded).bold())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .foregroundStyle(.white)
+                .background(workspaceName.trimmingCharacters(in: .whitespaces).isEmpty || isLoading
+                    ? theme.primary.opacity(0.35) : theme.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .disabled(workspaceName.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    // MARK: - Join Form
+
+    private func joinForm(theme: AppTheme) -> some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: "key.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(theme.primary)
+                    .frame(width: 20)
+                TextField("6자리 초대 코드", text: $inviteCode)
+                    .textFieldStyle(.plain)
+                    .textInputAutocapitalization(.characters)
+                    .focused($fieldFocused)
+                    .font(.system(.body, design: .rounded).monospacedDigit())
+                    .foregroundStyle(theme.textPrimary)
+                    .kerning(inviteCode.isEmpty ? 0 : 4)
+                    .onChange(of: inviteCode) { _, newValue in
+                        inviteCode = String(newValue.prefix(6)).uppercased()
+                    }
+
+                if !inviteCode.isEmpty {
+                    Text("\(inviteCode.count)/6")
+                        .font(.system(.caption2, design: .rounded).bold())
+                        .foregroundStyle(inviteCode.count == 6 ? theme.primary : theme.textSecondary)
+                }
+            }
+            .padding(16)
+            .background(theme.surfaceBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(fieldFocused && mode == .join ? theme.primary.opacity(0.5) : .clear, lineWidth: 1.5)
+            )
+
+            Button {
+                Task { await joinWorkspace() }
+            } label: {
+                HStack(spacing: 8) {
+                    if isLoading {
+                        ProgressView().tint(.white).scaleEffect(0.85)
+                    } else {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    Text("참여하기")
+                        .font(.system(.body, design: .rounded).bold())
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .foregroundStyle(.white)
+                .background(inviteCode.count != 6 || isLoading
+                    ? theme.primary.opacity(0.35) : theme.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .disabled(inviteCode.count != 6 || isLoading)
+        }
+        .padding(.horizontal, 4)
+    }
+
+    // MARK: - Actions
 
     private func createWorkspace() async {
         isLoading = true
@@ -240,7 +285,6 @@ struct WorkspaceSetupView: View {
         defer { isLoading = false }
         let success = await WorkspaceManager.shared.joinWithCode(inviteCode)
         if success {
-            // pending 상태이므로 DataManager 로드 없이 바로 진행
             onComplete()
         } else {
             errorMessage = WorkspaceManager.shared.errorMessage ?? "참여에 실패했습니다"

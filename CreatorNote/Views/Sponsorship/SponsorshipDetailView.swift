@@ -183,6 +183,12 @@ struct SponsorshipDetailView: View {
                         .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
+                        .background(Color.red.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(Color.red.opacity(0.25), lineWidth: 1)
+                        )
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 20)

@@ -3,6 +3,8 @@ import SwiftUI
 struct GlobalSearchView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var searchText = ""
+    @State private var selectedReelsNote: ReelsNoteDTO?
+    @State private var selectedGeneralNote: GeneralNoteDTO?
     @FocusState private var isSearchFocused: Bool
 
     private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
@@ -91,13 +93,16 @@ struct GlobalSearchView: View {
                                 theme: theme
                             ) {
                                 ForEach(filteredSponsorships.prefix(3)) { item in
-                                    searchRow(
-                                        icon: "gift.fill",
-                                        iconColor: theme.primary,
-                                        title: item.brandName,
-                                        subtitle: item.productName.isEmpty ? nil : item.productName,
-                                        theme: theme
-                                    )
+                                    NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
+                                        searchRow(
+                                            icon: "gift.fill",
+                                            iconColor: theme.primary,
+                                            title: item.brandName,
+                                            subtitle: item.productName.isEmpty ? nil : item.productName,
+                                            theme: theme
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 if filteredSponsorships.count > 3 {
                                     moreButton(count: filteredSponsorships.count - 3, theme: theme)
@@ -113,13 +118,16 @@ struct GlobalSearchView: View {
                                 theme: theme
                             ) {
                                 ForEach(filteredSettlements.prefix(3)) { item in
-                                    searchRow(
-                                        icon: "wonsign.circle.fill",
-                                        iconColor: theme.accent,
-                                        title: item.brandName,
-                                        subtitle: item.memo.isEmpty ? nil : item.memo,
-                                        theme: theme
-                                    )
+                                    NavigationLink(destination: SettlementDetailView(settlement: item)) {
+                                        searchRow(
+                                            icon: "wonsign.circle.fill",
+                                            iconColor: theme.accent,
+                                            title: item.brandName,
+                                            subtitle: item.memo.isEmpty ? nil : item.memo,
+                                            theme: theme
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 if filteredSettlements.count > 3 {
                                     moreButton(count: filteredSettlements.count - 3, theme: theme)
@@ -135,13 +143,18 @@ struct GlobalSearchView: View {
                                 theme: theme
                             ) {
                                 ForEach(filteredReelsNotes.prefix(3)) { item in
-                                    searchRow(
-                                        icon: "note.text",
-                                        iconColor: .orange,
-                                        title: item.title.isEmpty ? "제목 없음" : item.title,
-                                        subtitle: item.plainContent.isEmpty ? nil : item.plainContent,
-                                        theme: theme
-                                    )
+                                    Button {
+                                        selectedReelsNote = item
+                                    } label: {
+                                        searchRow(
+                                            icon: "note.text",
+                                            iconColor: .orange,
+                                            title: item.title.isEmpty ? "제목 없음" : item.title,
+                                            subtitle: item.plainContent.isEmpty ? nil : item.plainContent,
+                                            theme: theme
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 if filteredReelsNotes.count > 3 {
                                     moreButton(count: filteredReelsNotes.count - 3, theme: theme)
@@ -157,13 +170,18 @@ struct GlobalSearchView: View {
                                 theme: theme
                             ) {
                                 ForEach(filteredGeneralNotes.prefix(3)) { item in
-                                    searchRow(
-                                        icon: "doc.text.fill",
-                                        iconColor: .blue,
-                                        title: item.title.isEmpty ? "제목 없음" : item.title,
-                                        subtitle: item.plainContent.isEmpty ? nil : item.plainContent,
-                                        theme: theme
-                                    )
+                                    Button {
+                                        selectedGeneralNote = item
+                                    } label: {
+                                        searchRow(
+                                            icon: "doc.text.fill",
+                                            iconColor: .blue,
+                                            title: item.title.isEmpty ? "제목 없음" : item.title,
+                                            subtitle: item.plainContent.isEmpty ? nil : item.plainContent,
+                                            theme: theme
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                                 if filteredGeneralNotes.count > 3 {
                                     moreButton(count: filteredGeneralNotes.count - 3, theme: theme)
@@ -180,6 +198,12 @@ struct GlobalSearchView: View {
         .background(theme.background)
         .onAppear {
             isSearchFocused = true
+        }
+        .sheet(item: $selectedReelsNote) { note in
+            NoteEditorView(reelsNote: note)
+        }
+        .sheet(item: $selectedGeneralNote) { note in
+            NoteEditorView(generalNote: note)
         }
     }
 

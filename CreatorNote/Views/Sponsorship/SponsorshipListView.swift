@@ -17,7 +17,10 @@ struct SponsorshipListView: View {
                 $0.productName.localizedCaseInsensitiveContains(searchText)
             }
         }
-        return result
+        return result.sorted { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+            return lhs.createdAt > rhs.createdAt
+        }
     }
 
     var body: some View {
@@ -46,7 +49,7 @@ struct SponsorshipListView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                         .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
                         .padding(.horizontal)
-                        .padding(.top, 8)
+                        .padding(.top, 16)
                         .padding(.bottom, 12)
 
                         ScrollView(.horizontal, showsIndicators: false) {
@@ -70,6 +73,14 @@ struct SponsorshipListView: View {
                                         sponsorshipCard(item, theme: theme)
                                     }
                                     .buttonStyle(.plain)
+                                    .swipeActions(edge: .leading) {
+                                        Button {
+                                            Task { await DataManager.shared.toggleSponsorshipPin(item) }
+                                        } label: {
+                                            Label(item.isPinned ? "고정 해제" : "고정", systemImage: item.isPinned ? "pin.slash.fill" : "pin.fill")
+                                        }
+                                        .tint(.orange)
+                                    }
                                 }
                             }
                             .padding(.horizontal)
@@ -101,7 +112,21 @@ struct SponsorshipListView: View {
     private func sponsorshipCard(_ item: SponsorshipDTO, theme: AppTheme) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
-                GradientAvatarView(text: item.brandName, gradient: [theme.primary])
+                ZStack(alignment: .topTrailing) {
+                    ZStack {
+                        Circle()
+                            .fill(theme.primary.opacity(0.12))
+                            .frame(width: 44, height: 44)
+                        Text("🎁")
+                            .font(.system(size: 20))
+                    }
+                    if item.isPinned {
+                        Image(systemName: "pin.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.orange)
+                            .offset(x: 4, y: -4)
+                    }
+                }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.brandName)
@@ -140,13 +165,13 @@ struct SponsorshipListView: View {
                 .padding(.top, 10)
             }
 
-            HStack(spacing: 8) {
-                if let createdBy = item.createdBy {
+            if let createdBy = item.createdBy {
+                HStack(spacing: 8) {
                     MemberChip(userId: createdBy)
+                    Spacer()
                 }
-                Spacer()
+                .padding(.top, 6)
             }
-            .padding(.top, 6)
         }
         .padding(16)
         .background(theme.cardBackground)

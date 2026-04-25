@@ -14,7 +14,7 @@ struct NotesTabView: View {
                     theme: theme
                 )
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.top, 12)
                 .padding(.bottom, 4)
 
                 Group {

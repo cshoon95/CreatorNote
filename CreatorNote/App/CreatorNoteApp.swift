@@ -23,6 +23,8 @@ struct RootView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var authChecked = false
     @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+    @State private var skippedWorkspaceSetup = false
+    @State private var skippedPendingApproval = false
 
     var body: some View {
         let wm = WorkspaceManager.shared
@@ -35,10 +37,14 @@ struct RootView: View {
                 OnboardingView {
                     showOnboarding = false
                 }
-            } else if wm.isPendingApproval {
-                PendingApprovalView()
-            } else if !wm.hasWorkspace {
-                WorkspaceSetupView {}
+            } else if wm.isPendingApproval && !skippedPendingApproval {
+                PendingApprovalView {
+                    skippedPendingApproval = true
+                }
+            } else if !wm.hasWorkspace && !skippedWorkspaceSetup {
+                WorkspaceSetupView {
+                    skippedWorkspaceSetup = true
+                }
             } else {
                 ContentView()
             }

@@ -96,7 +96,7 @@ struct MemberChip: View {
         let theme = themeManager.theme
         HStack(spacing: 4) {
             Circle()
-                .fill(theme.primary)
+                .fill(ProfileColor.color(for: userId))
                 .frame(width: 16, height: 16)
                 .overlay {
                     Text(initial)
@@ -111,6 +111,16 @@ struct MemberChip: View {
         .padding(.vertical, 3)
         .background(theme.primary.opacity(0.06))
         .clipShape(Capsule())
+    }
+}
+
+enum ProfileColor {
+    static let colors: [Color] = [.blue, .purple, .orange, .green, .pink, .teal, .indigo, .mint]
+
+    static func color(for userId: UUID?) -> Color {
+        guard let userId else { return .gray }
+        let hash = abs(userId.hashValue)
+        return colors[hash % colors.count]
     }
 }
 

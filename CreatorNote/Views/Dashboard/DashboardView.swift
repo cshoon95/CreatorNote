@@ -33,11 +33,13 @@ struct DashboardView: View {
     }
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: .now)
+        let nickname = AuthManager.shared.currentProfile?.displayName ?? ""
+        let suffix = nickname.isEmpty ? "" : " \(nickname)님"
         switch h {
-        case 6..<12: return "좋은 아침이에요 ☀️"
-        case 12..<18: return "활기찬 오후에요 🌤"
-        case 18..<22: return "수고한 하루에요 🌙"
-        default: return "늦은 밤이에요 🌛"
+        case 6..<12: return "좋은 아침이에요\(suffix) ☀️"
+        case 12..<18: return "활기찬 오후에요\(suffix) 🌤"
+        case 18..<22: return "수고한 하루에요\(suffix) 🌙"
+        default: return "늦은 밤이에요\(suffix) 🌛"
         }
     }
 
@@ -47,7 +49,7 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     headerCard(theme: theme)
-                        .padding(.top, 8)
+                        .padding(.top, 20)
 
                     HStack(spacing: 12) {
                         miniStatCard(
@@ -122,16 +124,6 @@ struct DashboardView: View {
                 Text(greeting)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.85))
-
-                HStack(spacing: 6) {
-                    Text("✦ v1.0")
-                        .font(.caption2.bold())
-                        .foregroundStyle(.white.opacity(0.8))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(.white.opacity(0.18))
-                        .clipShape(Capsule())
-                }
 
                 Text("Influe")
                     .font(.system(.largeTitle, design: .rounded).bold())

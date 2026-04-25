@@ -10,6 +10,7 @@ struct SponsorshipDTO: Codable, Identifiable, Sendable {
     var startDate: Date
     var endDate: Date
     var status: String
+    var isPinned: Bool
     var createdBy: UUID?
     var updatedBy: UUID?
     var createdAt: Date
@@ -22,6 +23,7 @@ struct SponsorshipDTO: Codable, Identifiable, Sendable {
         case productName = "product_name"
         case startDate = "start_date"
         case endDate = "end_date"
+        case isPinned = "is_pinned"
         case createdBy = "created_by"
         case updatedBy = "updated_by"
         case createdAt = "created_at"

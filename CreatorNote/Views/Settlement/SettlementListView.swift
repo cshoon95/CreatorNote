@@ -41,7 +41,7 @@ struct SettlementListView: View {
                     VStack(spacing: 0) {
                         heroCard(theme: theme)
                             .padding(.horizontal)
-                            .padding(.top, 12)
+                            .padding(.top, 16)
                             .padding(.bottom, 20)
 
                         filterTabs(theme: theme)

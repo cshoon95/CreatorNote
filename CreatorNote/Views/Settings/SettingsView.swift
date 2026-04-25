@@ -10,12 +10,12 @@ struct SettingsView: View {
             VStack(spacing: 20) {
                 profileHeroCard(theme: theme)
                 workspaceCard(theme: theme)
-                themeCard(theme: theme)
                 helpCard(theme: theme)
                 logoutButton(theme: theme)
             }
             .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 20)
         }
         .background(theme.surfaceBackground.ignoresSafeArea())
         .navigationTitle("설정")
@@ -126,83 +126,38 @@ struct SettingsView: View {
     }
 
     private func themeCard(theme: AppTheme) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "paintpalette.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(theme.primary)
-                Text("테마 선택")
-                    .font(.system(.body, design: .rounded))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(theme.textPrimary)
-            }
-
-            Button {
-                themeManager.toggleFollowSystem()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: themeManager.followSystem ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(themeManager.followSystem ? theme.primary : theme.textSecondary)
-                    Text("시스템 설정 따라가기")
-                        .font(.system(.subheadline, design: .rounded))
+        NavigationLink {
+            ThemeSettingsView()
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(theme.primary.opacity(0.12))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "paintpalette.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(theme.primary)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("테마 설정")
+                        .font(.system(.body, design: .rounded).bold())
                         .foregroundStyle(theme.textPrimary)
-                    Spacer()
+                    Text(themeManager.currentThemeType.displayName)
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
                 }
-                .padding(12)
-                .background(themeManager.followSystem ? theme.primary.opacity(0.08) : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(theme.textSecondary.opacity(0.5))
             }
-            .buttonStyle(.plain)
-
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 14) {
-                ForEach(AppThemeType.allCases) { themeType in
-                    let t = AppTheme.theme(for: themeType)
-                    let isSelected = themeManager.currentThemeType == themeType
-
-                    Button {
-                        themeManager.setTheme(themeType)
-                    } label: {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 22)
-                                    .fill(
-                                        t.primary
-                                    )
-                                    .frame(height: 96)
-
-                                Image(systemName: isSelected ? "checkmark.circle.fill" : themeType.icon)
-                                    .font(.system(size: isSelected ? 26 : 22, weight: isSelected ? .bold : .medium))
-                                    .foregroundStyle(.white.opacity(isSelected ? 1 : 0.85))
-                            }
-                            .clipShape(RoundedRectangle(cornerRadius: 22))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 22)
-                                    .stroke(
-                                        isSelected ? theme.primary : Color.clear,
-                                        lineWidth: 3
-                                    )
-                            )
-                            .shadow(
-                                color: isSelected ? t.primary.opacity(0.4) : .black.opacity(0.06),
-                                radius: isSelected ? 10 : 4,
-                                x: 0,
-                                y: isSelected ? 4 : 2
-                            )
-
-                            Text(themeType.displayName)
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                .foregroundStyle(isSelected ? theme.primary : theme.textSecondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 18)
+            .background(theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 20)
-        .background(theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .buttonStyle(.plain)
     }
 
     private func appInfoCard(theme: AppTheme) -> some View {
@@ -295,6 +250,12 @@ struct SettingsView: View {
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
+            .background(Color.red.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.red.opacity(0.25), lineWidth: 1)
+            )
         }
         .padding(.bottom, 12)
     }

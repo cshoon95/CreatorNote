@@ -4,6 +4,8 @@ struct ReelsNoteListView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var filterStatus: ReelsNoteStatus?
     @State private var showingNewNote = false
+    @State private var showingTemplateSheet = false
+    @State private var selectedTemplate: NoteTemplate?
     @State private var selectedNote: ReelsNoteDTO?
     @State private var searchText = ""
     @State private var noteToDelete: ReelsNoteDTO?
@@ -62,7 +64,7 @@ struct ReelsNoteListView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16))
                 .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
                 .padding(.horizontal, 16)
-                .padding(.top, 12)
+                .padding(.top, 8)
                 .padding(.bottom, 8)
 
                 HStack(spacing: 0) {
@@ -133,7 +135,7 @@ struct ReelsNoteListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            Button { showingNewNote = true } label: {
+            Button { showingTemplateSheet = true } label: {
                 Circle()
                     .fill(theme.primary)
                     .frame(width: 56, height: 56)
@@ -149,8 +151,25 @@ struct ReelsNoteListView: View {
         .sheet(item: $selectedNote) { note in
             NoteEditorView(reelsNote: note)
         }
-        .sheet(isPresented: $showingNewNote) {
-            NoteEditorView(reelsNote: nil)
+        .sheet(isPresented: $showingTemplateSheet) {
+            NoteTemplateSheet { content, titlePlaceholder in
+                selectedTemplate = NoteTemplate.allCases.first { $0.content == content } ?? .blank
+            }
+            .presentationDetents([.large])
+        }
+        .onChange(of: showingTemplateSheet) { _, isShowing in
+            if !isShowing && selectedTemplate != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    showingNewNote = true
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showingNewNote) {
+            if let template = selectedTemplate {
+                NoteEditorView(reelsNote: nil, templateContent: template.content, templateTitle: template.titlePlaceholder)
+            } else {
+                NoteEditorView(reelsNote: nil)
+            }
         }
         .alert("노트를 삭제할까요?", isPresented: Binding(
             get: { noteToDelete != nil },

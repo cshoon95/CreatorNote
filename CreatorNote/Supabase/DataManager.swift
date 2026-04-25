@@ -137,6 +137,25 @@ final class DataManager {
         }
     }
 
+    func toggleSponsorshipPin(_ item: SponsorshipDTO) async {
+        let newValue = !item.isPinned
+        if let idx = sponsorships.firstIndex(where: { $0.id == item.id }) {
+            sponsorships[idx].isPinned = newValue
+        }
+        do {
+            try await supabase.from("sponsorships")
+                .update(["is_pinned": newValue])
+                .eq("id", value: item.id.uuidString)
+                .execute()
+            ToastManager.shared.show(newValue ? "고정되었습니다" : "고정 해제되었습니다", icon: newValue ? "pin.fill" : "pin.slash.fill")
+        } catch {
+            if let idx = sponsorships.firstIndex(where: { $0.id == item.id }) {
+                sponsorships[idx].isPinned = !newValue
+            }
+            showError("고정 설정에 실패했습니다")
+        }
+    }
+
     // MARK: - Settlements
     func fetchSettlements() async {
         guard let wid = workspaceId else { return }

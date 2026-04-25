@@ -24,8 +24,19 @@ struct NoteEditorView: View {
     @State private var showTemplateSheet = false
     @State private var isNewNote = false
 
+    private var initialTemplateContent: String?
+    private var initialTemplateTitle: String?
+    private var templatePreSelected: Bool = false
+
     init(reelsNote: ReelsNoteDTO? = nil) {
         self.mode = .reels(reelsNote)
+    }
+
+    init(reelsNote: ReelsNoteDTO? = nil, templateContent: String, templateTitle: String) {
+        self.mode = .reels(reelsNote)
+        self.initialTemplateContent = templateContent
+        self.initialTemplateTitle = templateTitle
+        self.templatePreSelected = true
     }
 
     init(generalNote: GeneralNoteDTO? = nil) {
@@ -61,8 +72,8 @@ struct NoteEditorView: View {
                         .font(.title2.bold())
                         .foregroundStyle(theme.textPrimary)
                         .padding(.horizontal, 20)
-                        .padding(.top, 20)
-                        .padding(.bottom, 12)
+                        .padding(.top, 24)
+                        .padding(.bottom, 16)
 
                     // 등록자·수정자 표시
                     if existingCreatedBy != nil || existingUpdatedBy != nil {
@@ -86,7 +97,7 @@ struct NoteEditorView: View {
                             Spacer()
                         }
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 14)
                     }
 
                     if isReelsMode {
@@ -97,7 +108,7 @@ struct NoteEditorView: View {
                         .fill(theme.divider)
                         .frame(height: 1)
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 8)
 
                     RichTextEditor(
                         attributedText: $attributedContent,
@@ -147,7 +158,18 @@ struct NoteEditorView: View {
                 loadContent()
                 if case .reels(let note) = mode, note == nil {
                     isNewNote = true
-                    showTemplateSheet = true
+                    if templatePreSelected {
+                        if let templateTitle = initialTemplateTitle, !templateTitle.isEmpty && title.isEmpty {
+                            title = templateTitle
+                        }
+                        if let content = initialTemplateContent, !content.isEmpty {
+                            plainContent = content
+                            attributedContent = NSAttributedString(string: content)
+                            editorCoordinator.replaceText(content)
+                        }
+                    } else {
+                        showTemplateSheet = true
+                    }
                 }
             }
             .sheet(isPresented: $showTemplateSheet) {
@@ -175,29 +197,35 @@ struct NoteEditorView: View {
     private func reelsControls(theme: AppTheme) -> some View {
         // Status chips
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
+            HStack(spacing: 10) {
                 ForEach(ReelsNoteStatus.allCases, id: \.self) { s in
                     Button {
                         Haptic.selection()
                         withAnimation(.spring(duration: 0.3)) { status = s }
                     } label: {
-                        VStack(spacing: 4) {
+                        HStack(spacing: 5) {
+                            Image(systemName: s.icon)
+                                .font(.system(size: 11))
                             Text(s.displayName)
-                                .font(.caption)
-                                .fontWeight(status == s ? .bold : .regular)
-                                .foregroundStyle(status == s ? theme.primary : theme.textSecondary)
-                            Rectangle()
-                                .fill(status == s ? theme.primary : .clear)
-                                .frame(height: 2)
-                                .clipShape(Capsule())
+                                .font(.system(.caption, design: .rounded))
+                                .fontWeight(status == s ? .bold : .medium)
                         }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .foregroundStyle(status == s ? .white : theme.textSecondary)
+                        .background(status == s ? theme.primary : theme.surfaceBackground)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .strokeBorder(status == s ? Color.clear : theme.divider, lineWidth: 1)
+                        )
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, 20)
         }
-        .padding(.bottom, 14)
+        .padding(.bottom, 18)
 
         // Tag row
         ScrollView(.horizontal, showsIndicators: false) {
@@ -242,7 +270,7 @@ struct NoteEditorView: View {
             }
             .padding(.horizontal, 20)
         }
-        .padding(.bottom, 12)
+        .padding(.bottom, 16)
     }
 
     private func loadContent() {

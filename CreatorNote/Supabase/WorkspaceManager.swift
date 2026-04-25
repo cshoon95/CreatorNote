@@ -264,8 +264,12 @@ final class WorkspaceManager {
                 UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
                 await fetchMembers()
                 ToastManager.shared.show("워크스페이스 참여가 승인되었습니다!", icon: "checkmark.circle.fill")
+            } else {
+                ToastManager.shared.show("아직 승인 대기중입니다", icon: "clock.fill")
             }
-        } catch {}
+        } catch {
+            print("[WorkspaceManager] checkApprovalStatus error: \(error)")
+        }
     }
 
     func cancelPendingRequest() async {
@@ -303,15 +307,13 @@ final class WorkspaceManager {
                     case status
                 }
             }
-            let memberRows: [MemberRow] = try await supabase
-                .from("workspace_members")
-                .select("user_id, role, status")
-                .eq("workspace_id", value: workspace.id.uuidString)
-                .execute()
-                .value
+
+            // RPC로 모든 멤버 조회 (방장 + 승인된 멤버 모두 가능)
+            let memberRows: [MemberRow] = try await supabase.rpc("get_workspace_members", params: ["ws_id": workspace.id.uuidString]).execute().value
 
             let approvedIds = memberRows.filter { $0.status == "approved" }.map(\.userId)
             let pendingIds = memberRows.filter { $0.status == "pending" }.map(\.userId)
+            print("[WorkspaceManager] fetchMembers: total=\(memberRows.count) approved=\(approvedIds.count) pending=\(pendingIds.count)")
 
             if !approvedIds.isEmpty {
                 let profiles: [Profile] = try await supabase
@@ -346,12 +348,10 @@ final class WorkspaceManager {
         guard let workspace = currentWorkspace,
               workspace.ownerId == AuthManager.shared.currentUser?.id else { return }
         do {
-            try await supabase
-                .from("workspace_members")
-                .update(["status": "approved"])
-                .eq("workspace_id", value: workspace.id.uuidString)
-                .eq("user_id", value: userId.uuidString)
-                .execute()
+            try await supabase.rpc("approve_workspace_member", params: [
+                "ws_id": workspace.id.uuidString,
+                "member_id": userId.uuidString
+            ]).execute()
             await fetchMembers()
             ToastManager.shared.show("멤버를 승인했습니다", icon: "person.fill.checkmark")
         } catch {
@@ -363,12 +363,10 @@ final class WorkspaceManager {
         guard let workspace = currentWorkspace,
               workspace.ownerId == AuthManager.shared.currentUser?.id else { return }
         do {
-            try await supabase
-                .from("workspace_members")
-                .delete()
-                .eq("workspace_id", value: workspace.id.uuidString)
-                .eq("user_id", value: userId.uuidString)
-                .execute()
+            try await supabase.rpc("reject_workspace_member", params: [
+                "ws_id": workspace.id.uuidString,
+                "member_id": userId.uuidString
+            ]).execute()
             await fetchMembers()
             ToastManager.shared.show("참여 요청을 거절했습니다", icon: "person.fill.xmark")
         } catch {
