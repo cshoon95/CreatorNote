@@ -13,6 +13,7 @@ struct SponsorshipFormView: View {
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(86400 * 30)
     @State private var status: SponsorshipStatus = .preSubmit
+    @State private var isPinned = false
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showError = false
@@ -117,6 +118,21 @@ struct SponsorshipFormView: View {
                             }
                             .padding(16)
                         }
+                    }
+
+                    // 고정
+                    sectionCard(title: "고정", theme: theme) {
+                        Toggle(isOn: $isPinned) {
+                            HStack(spacing: 8) {
+                                Image(systemName: isPinned ? "pin.fill" : "pin")
+                                    .foregroundStyle(isPinned ? .orange : theme.textSecondary)
+                                Text("상단에 고정")
+                                    .font(.subheadline)
+                                    .foregroundStyle(theme.textPrimary)
+                            }
+                        }
+                        .tint(.orange)
+                        .padding(16)
                     }
 
                     // 등록자·수정자
@@ -231,6 +247,7 @@ struct SponsorshipFormView: View {
         startDate = s.startDate
         endDate = s.endDate
         status = s.sponsorshipStatus
+        isPinned = s.isPinned
     }
 
     private func save() async {
@@ -246,6 +263,7 @@ struct SponsorshipFormView: View {
             updated.startDate = startDate
             updated.endDate = endDate
             updated.status = status.rawValue
+            updated.isPinned = isPinned
             updated.updatedAt = .now
             updated.updatedBy = AuthManager.shared.currentUser?.id
             await DataManager.shared.updateSponsorship(updated)
@@ -257,7 +275,8 @@ struct SponsorshipFormView: View {
                 amount: parsedAmount,
                 startDate: startDate,
                 endDate: endDate,
-                status: status
+                status: status,
+                isPinned: isPinned
             )
         }
         if let msg = DataManager.shared.errorMessage {

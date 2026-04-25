@@ -84,13 +84,13 @@ final class DataManager {
         } catch { showError("협찬 목록을 불러올 수 없습니다") }
     }
 
-    func createSponsorship(brandName: String, productName: String = "", details: String = "", amount: Double = 0, startDate: Date = .now, endDate: Date = .now.addingTimeInterval(86400 * 30), status: SponsorshipStatus = .preSubmit) async {
+    func createSponsorship(brandName: String, productName: String = "", details: String = "", amount: Double = 0, startDate: Date = .now, endDate: Date = .now.addingTimeInterval(86400 * 30), status: SponsorshipStatus = .preSubmit, isPinned: Bool = false) async {
         guard let wid = workspaceId, let uid = userId else {
             showError("워크스페이스 또는 로그인 정보가 없습니다")
             return
         }
         do {
-            let dto = SponsorshipInsert(workspaceId: wid, createdBy: uid, brandName: brandName, productName: productName, details: details, amount: amount, startDate: startDate, endDate: endDate, status: status.rawValue)
+            let dto = SponsorshipInsert(workspaceId: wid, createdBy: uid, brandName: brandName, productName: productName, details: details, amount: amount, startDate: startDate, endDate: endDate, status: status.rawValue, isPinned: isPinned)
             let created: SponsorshipDTO = try await supabase.from("sponsorships").insert(dto).select().single().execute().value
             sponsorships.insert(created, at: 0)
             ToastManager.shared.show("협찬이 등록되었습니다")
@@ -313,11 +313,12 @@ private struct SponsorshipInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let brandName: String
     let productName: String; let details: String; let amount: Double
     let startDate: Date; let endDate: Date; let status: String
+    let isPinned: Bool
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
         case brandName = "brand_name"; case productName = "product_name"
         case details, amount; case startDate = "start_date"
-        case endDate = "end_date"; case status
+        case endDate = "end_date"; case status; case isPinned = "is_pinned"
     }
 }
 
