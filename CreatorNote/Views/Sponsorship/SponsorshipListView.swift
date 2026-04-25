@@ -112,23 +112,17 @@ struct SponsorshipListView: View {
     private func sponsorshipCard(_ item: SponsorshipDTO, theme: AppTheme) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 14) {
-                ZStack(alignment: .topTrailing) {
-                    ZStack {
-                        Circle()
-                            .fill(theme.primary.opacity(0.12))
-                            .frame(width: 44, height: 44)
-                        Text("🎁")
-                            .font(.system(size: 20))
-                    }
-                    if item.isPinned {
-                        Image(systemName: "pin.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.orange)
-                            .offset(x: 4, y: -4)
-                    }
-                }
-
                 VStack(alignment: .leading, spacing: 3) {
+                    if item.isPinned {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pin.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.orange)
+                            Text("고정됨")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.orange)
+                        }
+                    }
                     Text(item.brandName)
                         .font(.subheadline.bold())
                         .foregroundStyle(theme.textPrimary)
