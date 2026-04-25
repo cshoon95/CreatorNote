@@ -11,6 +11,7 @@ struct SettingsView: View {
                 profileHeroCard(theme: theme)
                 workspaceCard(theme: theme)
                 themeCard(theme: theme)
+                helpCard(theme: theme)
                 logoutButton(theme: theme)
             }
             .padding(.horizontal, 20)
@@ -243,6 +244,42 @@ struct SettingsView: View {
         .background(theme.cardBackground)
         .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+
+    private func helpCard(theme: AppTheme) -> some View {
+        NavigationLink {
+            HelpView()
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(theme.primary)
+                        .frame(width: 48, height: 48)
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("도움말")
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.semibold)
+                        .foregroundStyle(theme.textPrimary)
+                    Text("각 화면 기능 안내")
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(theme.textSecondary.opacity(0.6))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+            .background(theme.cardBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        }
+        .buttonStyle(.plain)
     }
 
     private func logoutButton(theme: AppTheme) -> some View {

@@ -56,6 +56,7 @@
 		EEAA169464F18EB47BC82600 /* ReelsNoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */; };
 		TOAST001DC7BEFC59DC21291 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOAST002F9F72D32CCD70233 /* ToastView.swift */; };
 		BA11CB22DC33ED44FE55AF66 /* PendingApprovalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC11BD22CE33DF44EA55FB66 /* PendingApprovalView.swift */; };
+		BA22DC44FE66BA22DC44FE66 /* HelpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB22CD44EF66AB22CD44EF66 /* HelpView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +76,7 @@
 		77B4BF7946EF952979CE0654 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
 		83E8E130F9F72D32CCD70233 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		864CB0507852117586B159F6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AB22CD44EF66AB22CD44EF66 /* HelpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelpView.swift; sourceTree = "<group>"; };
 		8B428B1FFFA85E7BF3D2A7C0 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsNoteListView.swift; sourceTree = "<group>"; };
 		99338190075AC7A6FDA28FD5 /* Sponsorship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sponsorship.swift; sourceTree = "<group>"; };
@@ -310,6 +312,7 @@
 			isa = PBXGroup;
 			children = (
 				864CB0507852117586B159F6 /* SettingsView.swift */,
+				AB22CD44EF66AB22CD44EF66 /* HelpView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -438,6 +441,7 @@
 				EEAA169464F18EB47BC82600 /* ReelsNoteListView.swift in Sources */,
 				2A122DCC7F866C7792A7C3BB /* RichTextEditor.swift in Sources */,
 				A5B319F5EDCC9835D4728B12 /* SettingsView.swift in Sources */,
+				BA22DC44FE66BA22DC44FE66 /* HelpView.swift in Sources */,
 				8B8A7E4F939E5157A2B346DF /* SettlementDTO.swift in Sources */,
 				E3BB453A68325D962D7BCE78 /* SettlementDetailView.swift in Sources */,
 				BFC1EC5E12076F30396C99FF /* SettlementFormView.swift in Sources */,
