@@ -9,6 +9,7 @@ final class WorkspaceManager {
     var workspaces: [Workspace] = []
     var members: [Profile] = []
     var pendingMembers: [Profile] = []
+    var pendingWorkspace: Workspace?
     var isLoading: Bool = false
     var errorMessage: String?
 
@@ -17,6 +18,52 @@ final class WorkspaceManager {
     private init() {}
 
     var hasWorkspace: Bool { currentWorkspace != nil }
+    var isPendingApproval: Bool { pendingWorkspace != nil && currentWorkspace == nil }
+
+    // MARK: - Restore on App Launch
+
+    func restoreFromStorage() async {
+        guard let userId = AuthManager.shared.currentUser?.id else { return }
+
+        do {
+            struct MemberRow: Codable {
+                let workspaceId: UUID
+                let status: String
+                enum CodingKeys: String, CodingKey {
+                    case workspaceId = "workspace_id"
+                    case status
+                }
+            }
+            let memberships: [MemberRow] = try await supabase
+                .from("workspace_members")
+                .select("workspace_id, status")
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+                .value
+
+            if let approved = memberships.first(where: { $0.status == "approved" }) {
+                await selectWorkspace(id: approved.workspaceId)
+            } else if let pending = memberships.first(where: { $0.status == "pending" }) {
+                let workspace: Workspace = try await supabase
+                    .from("workspaces")
+                    .select()
+                    .eq("id", value: pending.workspaceId.uuidString)
+                    .single()
+                    .execute()
+                    .value
+                pendingWorkspace = workspace
+                UserDefaults.standard.set(pending.workspaceId.uuidString, forKey: "pending_workspace_id")
+            }
+        } catch {
+            // Fallback to UserDefaults
+            if let storedId = UserDefaults.standard.string(forKey: "current_workspace_id"),
+               let uuid = UUID(uuidString: storedId) {
+                await selectWorkspace(id: uuid)
+            }
+        }
+    }
+
+    // MARK: - Fetch
 
     func fetchWorkspaces() async {
         isLoading = true
@@ -46,12 +93,19 @@ final class WorkspaceManager {
             UserDefaults.standard.set(id.uuidString, forKey: "current_workspace_id")
             await fetchMembers()
         } catch {
-            errorMessage = "워크스페이스 선택에 실패했습니다"
+            currentWorkspace = nil
+            UserDefaults.standard.removeObject(forKey: "current_workspace_id")
         }
     }
 
+    // MARK: - Create
+
     func createWorkspace(name: String) async -> Bool {
         guard let userId = AuthManager.shared.currentUser?.id else { return false }
+        guard !hasWorkspace && !isPendingApproval else {
+            errorMessage = "이미 워크스페이스에 속해있습니다"
+            return false
+        }
         isLoading = true
         defer { isLoading = false }
         do {
@@ -64,11 +118,13 @@ final class WorkspaceManager {
                 .execute()
                 .value
 
-            let membership = WorkspaceMemberInsert(workspaceId: created.id, userId: userId, role: "owner")
+            let membership = WorkspaceMemberInsert(workspaceId: created.id, userId: userId, role: "owner", status: "approved")
             try await supabase.from("workspace_members").insert(membership).execute()
 
             currentWorkspace = created
+            pendingWorkspace = nil
             UserDefaults.standard.set(created.id.uuidString, forKey: "current_workspace_id")
+            UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
             await fetchWorkspaces()
             return true
         } catch {
@@ -76,6 +132,22 @@ final class WorkspaceManager {
             return false
         }
     }
+
+    // MARK: - Delete (Owner only)
+
+    func deleteWorkspace() async {
+        guard let workspace = currentWorkspace,
+              let userId = AuthManager.shared.currentUser?.id,
+              workspace.ownerId == userId else {
+            errorMessage = "방장만 워크스페이스를 삭제할 수 있습니다"
+            return
+        }
+        isLoading = true
+        defer { isLoading = false }
+        await deleteWorkspaceRecord(workspace)
+    }
+
+    // MARK: - Invite Code
 
     func generateInviteCode() async -> String? {
         guard let workspace = currentWorkspace,
@@ -94,19 +166,15 @@ final class WorkspaceManager {
         }
     }
 
+    // MARK: - Join via Invite Code
+
     func joinWithCode(_ code: String) async -> Bool {
         guard let userId = AuthManager.shared.currentUser?.id else { return false }
 
-        // 이미 워크스페이스에 속해있는지 확인
-        if currentWorkspace != nil {
-            errorMessage = "이미 워크스페이스에 참여중입니다. 기존 워크스페이스를 나간 후 다시 시도하세요."
-            return false
-        }
-
         isLoading = true
         defer { isLoading = false }
+
         do {
-            // 초대코드로 워크스페이스 ID 조회
             struct InviteRow: Codable {
                 let workspaceId: UUID
                 enum CodingKeys: String, CodingKey {
@@ -116,7 +184,7 @@ final class WorkspaceManager {
             let invites: [InviteRow] = try await supabase
                 .from("invite_codes")
                 .select("workspace_id")
-                .eq("code", value: code)
+                .eq("code", value: code.uppercased())
                 .gt("expires_at", value: ISO8601DateFormatter().string(from: Date()))
                 .execute()
                 .value
@@ -126,26 +194,101 @@ final class WorkspaceManager {
                 return false
             }
 
-            // pending 상태로 멤버 추가
-            let membership = WorkspaceMemberInsert(workspaceId: invite.workspaceId, userId: userId, role: "member")
-            try await supabase.from("workspace_members")
-                .insert(membership)
-                .execute()
+            if currentWorkspace?.id == invite.workspaceId {
+                errorMessage = "이미 이 워크스페이스에 참여중입니다"
+                return false
+            }
 
-            // status를 pending으로 설정
-            try await supabase.from("workspace_members")
-                .update(["status": "pending"])
-                .eq("workspace_id", value: invite.workspaceId.uuidString)
-                .eq("user_id", value: userId.uuidString)
-                .execute()
+            // 기존 워크스페이스 처리
+            if let current = currentWorkspace {
+                if current.ownerId == userId {
+                    let otherMembers = members.filter { $0.id != userId }
+                    if !otherMembers.isEmpty {
+                        errorMessage = "다른 멤버가 있는 워크스페이스의 방장은 참여할 수 없습니다. 먼저 멤버를 모두 내보내거나 워크스페이스를 삭제하세요."
+                        return false
+                    }
+                    guard await deleteWorkspaceRecord(current) else { return false }
+                } else {
+                    await leaveCurrentWorkspaceInternal()
+                }
+            }
 
+            // 새 워크스페이스에 pending으로 참여 (단일 원자적 삽입)
+            let membership = WorkspaceMemberInsert(workspaceId: invite.workspaceId, userId: userId, role: "member", status: "pending")
+            try await supabase.from("workspace_members").insert(membership).execute()
+
+            let workspace: Workspace = try await supabase
+                .from("workspaces")
+                .select()
+                .eq("id", value: invite.workspaceId.uuidString)
+                .single()
+                .execute()
+                .value
+
+            pendingWorkspace = workspace
+            UserDefaults.standard.set(invite.workspaceId.uuidString, forKey: "pending_workspace_id")
             ToastManager.shared.show("참여 요청을 보냈습니다. 방장의 승인을 기다려주세요.", icon: "clock.fill")
             return true
         } catch {
-            errorMessage = "참여 요청에 실패했습니다"
+            errorMessage = "참여 요청에 실패했습니다: \(error.localizedDescription)"
             return false
         }
     }
+
+    // MARK: - Pending Approval
+
+    func checkApprovalStatus() async {
+        guard let workspace = pendingWorkspace,
+              let userId = AuthManager.shared.currentUser?.id else { return }
+
+        do {
+            struct StatusRow: Codable {
+                let status: String
+            }
+            let rows: [StatusRow] = try await supabase
+                .from("workspace_members")
+                .select("status")
+                .eq("workspace_id", value: workspace.id.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+                .value
+
+            if rows.isEmpty {
+                pendingWorkspace = nil
+                UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
+                ToastManager.shared.show("참여 요청이 거절되었습니다", icon: "xmark.circle.fill")
+            } else if let row = rows.first, row.status == "approved" {
+                currentWorkspace = workspace
+                pendingWorkspace = nil
+                UserDefaults.standard.set(workspace.id.uuidString, forKey: "current_workspace_id")
+                UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
+                await fetchMembers()
+                ToastManager.shared.show("워크스페이스 참여가 승인되었습니다!", icon: "checkmark.circle.fill")
+            }
+        } catch {}
+    }
+
+    func cancelPendingRequest() async {
+        guard let workspace = pendingWorkspace,
+              let userId = AuthManager.shared.currentUser?.id else { return }
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await supabase
+                .from("workspace_members")
+                .delete()
+                .eq("workspace_id", value: workspace.id.uuidString)
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+            pendingWorkspace = nil
+            UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
+            ToastManager.shared.show("참여 요청을 취소했습니다", icon: "xmark")
+        } catch {
+            errorMessage = "요청 취소에 실패했습니다"
+        }
+    }
+
+    // MARK: - Members
 
     func fetchMembers() async {
         guard let workspace = currentWorkspace else { return }
@@ -257,9 +400,17 @@ final class WorkspaceManager {
         }
     }
 
+    // MARK: - Leave (Members only — owners must delete)
+
     func leaveWorkspace() async {
         guard let workspace = currentWorkspace,
               let userId = AuthManager.shared.currentUser?.id else { return }
+
+        guard workspace.ownerId != userId else {
+            errorMessage = "방장은 워크스페이스를 나갈 수 없습니다. 워크스페이스를 삭제하거나 방장을 다른 멤버에게 위임하세요."
+            return
+        }
+
         do {
             try await supabase
                 .from("workspace_members")
@@ -267,12 +418,49 @@ final class WorkspaceManager {
                 .eq("workspace_id", value: workspace.id.uuidString)
                 .eq("user_id", value: userId.uuidString)
                 .execute()
-            currentWorkspace = nil
-            UserDefaults.standard.removeObject(forKey: "current_workspace_id")
-            await fetchWorkspaces()
+            clearLocalWorkspaceState()
+            ToastManager.shared.show("워크스페이스에서 나갔습니다", icon: "rectangle.portrait.and.arrow.right")
         } catch {
             errorMessage = "워크스페이스 나가기에 실패했습니다"
         }
+    }
+
+    // MARK: - Private Helpers
+
+    @discardableResult
+    private func deleteWorkspaceRecord(_ workspace: Workspace) async -> Bool {
+        do {
+            try await supabase
+                .from("workspaces")
+                .delete()
+                .eq("id", value: workspace.id.uuidString)
+                .execute()
+            clearLocalWorkspaceState()
+            return true
+        } catch {
+            errorMessage = "워크스페이스 삭제에 실패했습니다: \(error.localizedDescription)"
+            return false
+        }
+    }
+
+    private func leaveCurrentWorkspaceInternal() async {
+        guard let workspace = currentWorkspace,
+              let userId = AuthManager.shared.currentUser?.id else { return }
+        try? await supabase
+            .from("workspace_members")
+            .delete()
+            .eq("workspace_id", value: workspace.id.uuidString)
+            .eq("user_id", value: userId.uuidString)
+            .execute()
+        clearLocalWorkspaceState()
+    }
+
+    private func clearLocalWorkspaceState() {
+        currentWorkspace = nil
+        workspaces = []
+        members = []
+        pendingMembers = []
+        UserDefaults.standard.removeObject(forKey: "current_workspace_id")
     }
 }
 
@@ -289,10 +477,12 @@ struct WorkspaceMemberInsert: Codable {
     let workspaceId: UUID
     let userId: UUID
     let role: String
+    let status: String
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"
         case userId = "user_id"
         case role
+        case status
     }
 }
 

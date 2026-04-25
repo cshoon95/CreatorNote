@@ -27,7 +27,7 @@ final class AuthManager {
             currentUser = session.user
             isAuthenticated = true
             await fetchProfile()
-            await restoreWorkspace()
+            await WorkspaceManager.shared.restoreFromStorage()
         } catch {
             clearAuthState()
         }
@@ -60,7 +60,7 @@ final class AuthManager {
                 displayName: name.isEmpty ? nil : name,
                 provider: "apple"
             )
-            await restoreWorkspace()
+            await WorkspaceManager.shared.restoreFromStorage()
         } catch {
             errorMessage = "Apple 로그인에 실패했습니다: \(error.localizedDescription)"
         }
@@ -82,7 +82,7 @@ final class AuthManager {
             currentUser = session.user
             isAuthenticated = true
             await fetchOrCreateProfile(provider: "google")
-            await restoreWorkspace()
+            await WorkspaceManager.shared.restoreFromStorage()
         } catch let error as NSError where error.domain == "com.apple.AuthenticationServices.WebAuthenticationSession" && error.code == 1 {
             // 사용자가 로그인을 취소한 경우 무시
         } catch {
@@ -216,18 +216,12 @@ final class AuthManager {
         currentUser = nil
         currentProfile = nil
         isAuthenticated = false
+        WorkspaceManager.shared.currentWorkspace = nil
+        WorkspaceManager.shared.pendingWorkspace = nil
+        WorkspaceManager.shared.workspaces = []
+        WorkspaceManager.shared.members = []
+        WorkspaceManager.shared.pendingMembers = []
         UserDefaults.standard.removeObject(forKey: "current_workspace_id")
-    }
-
-    private func restoreWorkspace() async {
-        if let storedId = UserDefaults.standard.string(forKey: "current_workspace_id"),
-           let uuid = UUID(uuidString: storedId) {
-            await WorkspaceManager.shared.selectWorkspace(id: uuid)
-        } else {
-            await WorkspaceManager.shared.fetchWorkspaces()
-            if let first = WorkspaceManager.shared.workspaces.first {
-                await WorkspaceManager.shared.selectWorkspace(id: first.id)
-            }
-        }
+        UserDefaults.standard.removeObject(forKey: "pending_workspace_id")
     }
 }

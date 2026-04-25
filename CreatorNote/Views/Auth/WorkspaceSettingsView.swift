@@ -5,12 +5,14 @@ struct WorkspaceSettingsView: View {
     @State private var generatedCode: String?
     @State private var isGenerating = false
     @State private var showLeaveAlert = false
+    @State private var showDeleteAlert = false
     @State private var copied = false
-    @State private var inviteInput = ""
-    @State private var isJoining = false
-    @State private var joinResult: String?
     @State private var memberToRemove: Profile?
     @State private var showRemoveAlert = false
+
+    private var isOwner: Bool {
+        AuthManager.shared.currentUser?.id == WorkspaceManager.shared.currentWorkspace?.ownerId
+    }
 
     var body: some View {
         let theme = themeManager.theme
@@ -26,7 +28,7 @@ struct WorkspaceSettingsView: View {
                             Text(workspace.name)
                                 .font(.system(.body, design: .rounded).bold())
                                 .foregroundStyle(theme.textPrimary)
-                            Text("워크스페이스")
+                            Text(isOwner ? "방장" : "멤버")
                                 .font(.caption)
                                 .foregroundStyle(theme.textSecondary)
                         }
@@ -37,8 +39,7 @@ struct WorkspaceSettingsView: View {
             // Members
             Section("멤버 (\(WorkspaceManager.shared.members.count))") {
                 ForEach(WorkspaceManager.shared.members) { member in
-                    let isOwner = member.id == WorkspaceManager.shared.currentWorkspace?.ownerId
-                    let iAmOwner = AuthManager.shared.currentUser?.id == WorkspaceManager.shared.currentWorkspace?.ownerId
+                    let memberIsOwner = member.id == WorkspaceManager.shared.currentWorkspace?.ownerId
                     HStack {
                         Circle()
                             .fill(theme.primary)
@@ -52,7 +53,7 @@ struct WorkspaceSettingsView: View {
                             .font(.system(.body, design: .rounded))
                             .foregroundStyle(theme.textPrimary)
                         Spacer()
-                        if isOwner {
+                        if memberIsOwner {
                             Text("방장")
                                 .font(.caption.bold())
                                 .foregroundStyle(theme.primary)
@@ -60,7 +61,7 @@ struct WorkspaceSettingsView: View {
                                 .padding(.vertical, 4)
                                 .background(theme.primary.opacity(0.1))
                                 .clipShape(Capsule())
-                        } else if iAmOwner {
+                        } else if isOwner {
                             Button(role: .destructive) {
                                 memberToRemove = member
                                 showRemoveAlert = true
@@ -78,9 +79,8 @@ struct WorkspaceSettingsView: View {
                 }
             }
 
-            // Pending Members
-            if !WorkspaceManager.shared.pendingMembers.isEmpty,
-               AuthManager.shared.currentUser?.id == WorkspaceManager.shared.currentWorkspace?.ownerId {
+            // Pending Members (owner only)
+            if !WorkspaceManager.shared.pendingMembers.isEmpty, isOwner {
                 Section("승인 대기 (\(WorkspaceManager.shared.pendingMembers.count))") {
                     ForEach(WorkspaceManager.shared.pendingMembers) { member in
                         HStack {
@@ -115,92 +115,71 @@ struct WorkspaceSettingsView: View {
                 }
             }
 
-            // Invite Code
-            Section("초대") {
-                if let code = generatedCode {
-                    HStack {
-                        Text(code)
-                            .font(.system(.title2, design: .monospaced).bold())
-                            .foregroundStyle(theme.primary)
-                        Spacer()
-                        Button(action: {
-                            UIPasteboard.general.string = code
-                            copied = true
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
-                        }) {
-                            Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
-                                .foregroundStyle(copied ? .green : theme.primary)
-                        }
-                    }
-                    Text("7일 후 만료 / 최대 5회 사용")
-                        .font(.caption)
-                        .foregroundStyle(theme.textSecondary)
-                } else {
-                    Button(action: {
-                        Task {
-                            isGenerating = true
-                            generatedCode = await WorkspaceManager.shared.generateInviteCode()
-                            isGenerating = false
-                        }
-                    }) {
+            // Invite Code (owner only)
+            if isOwner {
+                Section("초대") {
+                    if let code = generatedCode {
                         HStack {
-                            Image(systemName: "person.badge.plus")
-                            Text("초대 코드 생성")
+                            Text(code)
+                                .font(.system(.title2, design: .monospaced).bold())
+                                .foregroundStyle(theme.primary)
                             Spacer()
-                            if isGenerating {
-                                ProgressView()
+                            Button(action: {
+                                UIPasteboard.general.string = code
+                                copied = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copied = false }
+                            }) {
+                                Image(systemName: copied ? "checkmark.circle.fill" : "doc.on.doc")
+                                    .foregroundStyle(copied ? .green : theme.primary)
                             }
                         }
+                        Text("7일 후 만료 / 최대 5회 사용")
+                            .font(.caption)
+                            .foregroundStyle(theme.textSecondary)
+                    } else {
+                        Button(action: {
+                            Task {
+                                isGenerating = true
+                                generatedCode = await WorkspaceManager.shared.generateInviteCode()
+                                isGenerating = false
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "person.badge.plus")
+                                Text("초대 코드 생성")
+                                Spacer()
+                                if isGenerating {
+                                    ProgressView()
+                                }
+                            }
+                        }
+                        .disabled(isGenerating)
                     }
-                    .disabled(isGenerating)
                 }
             }
 
-            // 초대코드 입력
-            Section("초대코드로 참여") {
-                HStack(spacing: 10) {
-                    TextField("초대코드 입력", text: $inviteInput)
-                        .font(.system(.body, design: .monospaced))
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .foregroundStyle(theme.textPrimary)
-
-                    Button {
-                        let code = inviteInput.trimmingCharacters(in: .whitespaces)
-                        guard !code.isEmpty else { return }
-                        Task {
-                            isJoining = true
-                            let success = await WorkspaceManager.shared.joinWithCode(code)
-                            joinResult = success ? "승인 요청을 보냈습니다" : (WorkspaceManager.shared.errorMessage ?? "유효하지 않은 코드입니다")
-                            isJoining = false
-                            if success { inviteInput = "" }
-                        }
-                    } label: {
-                        if isJoining {
-                            ProgressView().scaleEffect(0.8)
-                        } else {
-                            Text("참여")
-                                .font(.subheadline.bold())
-                                .foregroundStyle(inviteInput.isEmpty ? .gray : theme.primary)
-                        }
-                    }
-                    .disabled(inviteInput.trimmingCharacters(in: .whitespaces).isEmpty || isJoining)
-                }
-
-                if let result = joinResult {
-                    Text(result)
-                        .font(.caption)
-                        .foregroundStyle(result.contains("완료") ? .green : .red)
-                }
-            }
-
-            // Leave
+            // Actions
             Section {
-                Button(role: .destructive, action: { showLeaveAlert = true }) {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                        Text("워크스페이스 나가기")
+                if isOwner {
+                    Button(role: .destructive, action: { showDeleteAlert = true }) {
+                        HStack {
+                            Image(systemName: "trash")
+                            Text("워크스페이스 삭제")
+                        }
                     }
+                } else {
+                    Button(role: .destructive, action: { showLeaveAlert = true }) {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Text("워크스페이스 나가기")
+                        }
+                    }
+                }
+            } footer: {
+                if isOwner {
+                    Text("워크스페이스를 삭제하면 모든 데이터가 영구적으로 삭제됩니다.")
+                        .font(.caption)
+                        .foregroundStyle(theme.textSecondary)
                 }
             }
         }
@@ -214,7 +193,15 @@ struct WorkspaceSettingsView: View {
             }
             Button("취소", role: .cancel) {}
         } message: {
-            Text("정말로 이 워크스페이스를 나가시겠습니까?")
+            Text("이 워크스페이스에서 나가시겠습니까?")
+        }
+        .alert("워크스페이스 삭제", isPresented: $showDeleteAlert) {
+            Button("삭제", role: .destructive) {
+                Task { await WorkspaceManager.shared.deleteWorkspace() }
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("워크스페이스와 모든 데이터가 영구적으로 삭제됩니다. 계속하시겠습니까?")
         }
         .alert("멤버 추방", isPresented: $showRemoveAlert) {
             Button("추방", role: .destructive) {

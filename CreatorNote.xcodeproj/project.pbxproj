@@ -55,6 +55,7 @@
 		EA667887F130282C612F0672 /* NotesTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B646CD7FCB1D3379592114CD /* NotesTabView.swift */; };
 		EEAA169464F18EB47BC82600 /* ReelsNoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */; };
 		TOAST001DC7BEFC59DC21291 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOAST002F9F72D32CCD70233 /* ToastView.swift */; };
+		BA11CB22DC33ED44FE55AF66 /* PendingApprovalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC11BD22CE33DF44EA55FB66 /* PendingApprovalView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -78,6 +79,7 @@
 		8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelsNoteListView.swift; sourceTree = "<group>"; };
 		99338190075AC7A6FDA28FD5 /* Sponsorship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sponsorship.swift; sourceTree = "<group>"; };
 		9A4E1498820182FFDE6D48B8 /* WorkspaceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSettingsView.swift; sourceTree = "<group>"; };
+		AC11BD22CE33DF44EA55FB66 /* PendingApprovalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingApprovalView.swift; sourceTree = "<group>"; };
 		9A698731D7D8831F4C9F897B /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		9BF0400AC59E72918F8E5639 /* WorkspaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceManager.swift; sourceTree = "<group>"; };
 		9EF552440474D9623556EB56 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 				A61BAA6F53280E738CBE7233 /* ProfileView.swift */,
 				9A4E1498820182FFDE6D48B8 /* WorkspaceSettingsView.swift */,
 				E7E6FA966D4C1F40DBB9AA7A /* WorkspaceSetupView.swift */,
+				AC11BD22CE33DF44EA55FB66 /* PendingApprovalView.swift */,
 			);
 			path = Auth;
 			sourceTree = "<group>";
@@ -459,6 +462,7 @@
 				4D8E71DCD1F1E73451DCAA30 /* WorkspaceManager.swift in Sources */,
 				1EE44EC8A512734669739749 /* WorkspaceSettingsView.swift in Sources */,
 				46729D13684A69796AC6627E /* WorkspaceSetupView.swift in Sources */,
+				BA11CB22DC33ED44FE55AF66 /* PendingApprovalView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

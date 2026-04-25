@@ -25,6 +25,7 @@ struct RootView: View {
     @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
 
     var body: some View {
+        let wm = WorkspaceManager.shared
         Group {
             if !authChecked {
                 SplashView()
@@ -34,7 +35,9 @@ struct RootView: View {
                 OnboardingView {
                     showOnboarding = false
                 }
-            } else if !WorkspaceManager.shared.hasWorkspace {
+            } else if wm.isPendingApproval {
+                PendingApprovalView()
+            } else if !wm.hasWorkspace {
                 WorkspaceSetupView {}
             } else {
                 ContentView()

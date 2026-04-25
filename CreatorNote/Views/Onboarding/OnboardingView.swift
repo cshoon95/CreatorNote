@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
     @State private var currentPage = 0
+    @State private var showWorkspaceSetup = false
     var onDismiss: () -> Void
 
     private let pages: [OnboardingPage] = [
@@ -31,17 +32,34 @@ struct OnboardingView: View {
     var body: some View {
         let theme = themeManager.theme
         ZStack {
+            if showWorkspaceSetup {
+                WorkspaceSetupView {
+                    completeOnboarding()
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                featureTourView(theme: theme)
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: showWorkspaceSetup)
+    }
+
+    private func featureTourView(theme: AppTheme) -> some View {
+        ZStack {
             theme.background
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Skip button
+                // Skip button — jumps directly to workspace setup
                 HStack {
                     Spacer()
                     if currentPage < pages.count - 1 {
                         Button {
                             Haptic.selection()
-                            dismiss()
+                            withAnimation {
+                                showWorkspaceSetup = true
+                            }
                         } label: {
                             Text("건너뛰기")
                                 .font(.subheadline)
@@ -79,13 +97,19 @@ struct OnboardingView: View {
                 if currentPage == pages.count - 1 {
                     Button {
                         Haptic.success()
-                        dismiss()
+                        withAnimation {
+                            showWorkspaceSetup = true
+                        }
                     } label: {
-                        Text("시작하기")
-                            .font(.headline)
-                            .foregroundStyle(theme.primary)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 56)
+                        HStack(spacing: 6) {
+                            Text("워크스페이스 설정하기")
+                                .font(.headline)
+                            Image(systemName: "arrow.right")
+                                .font(.subheadline.bold())
+                        }
+                        .foregroundStyle(theme.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
                     }
                     .padding(.horizontal, 32)
                     .padding(.bottom, 48)
@@ -114,7 +138,7 @@ struct OnboardingView: View {
         }
     }
 
-    private func dismiss() {
+    private func completeOnboarding() {
         UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
         onDismiss()
     }
@@ -134,7 +158,6 @@ private struct OnboardingPageView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            // Gradient icon circle
             ZStack {
                 Circle()
                     .fill(theme.primary)

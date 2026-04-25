@@ -240,7 +240,7 @@ struct WorkspaceSetupView: View {
         defer { isLoading = false }
         let success = await WorkspaceManager.shared.joinWithCode(inviteCode)
         if success {
-            await DataManager.shared.fetchAll()
+            // pending 상태이므로 DataManager 로드 없이 바로 진행
             onComplete()
         } else {
             errorMessage = WorkspaceManager.shared.errorMessage ?? "참여에 실패했습니다"
