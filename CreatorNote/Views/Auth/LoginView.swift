@@ -116,10 +116,10 @@ struct LoginView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: isLoading)
-        .alert("로그인 오류", isPresented: $showError) {
-            Button("확인", role: .cancel) { }
-        } message: {
-            Text(errorMessage ?? "알 수 없는 오류가 발생했습니다.")
+        .onChange(of: showError) {
+            guard showError else { return }
+            showError = false
+            AlertManager.shared.show(title: "로그인 오류", message: errorMessage ?? "알 수 없는 오류가 발생했습니다.")
         }
     }
 

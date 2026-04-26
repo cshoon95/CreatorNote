@@ -21,13 +21,17 @@ struct SettingsView: View {
         .navigationTitle("설정")
         .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(themeManager.resolvedColorScheme)
-        .confirmationDialog("로그아웃", isPresented: $showLogoutConfirmation, titleVisibility: .visible) {
-            Button("로그아웃", role: .destructive) {
+        .onChange(of: showLogoutConfirmation) {
+            guard showLogoutConfirmation else { return }
+            showLogoutConfirmation = false
+            AlertManager.shared.confirm(
+                title: "로그아웃",
+                message: "정말 로그아웃 하시겠습니까?",
+                confirmTitle: "로그아웃",
+                confirmRole: .destructive
+            ) {
                 Task { await AuthManager.shared.signOut() }
             }
-            Button("취소", role: .cancel) {}
-        } message: {
-            Text("정말 로그아웃 하시겠습니까?")
         }
     }
 

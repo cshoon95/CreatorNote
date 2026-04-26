@@ -39,7 +39,17 @@ struct SponsorshipDetailView: View {
                 Menu {
                     Button("편집") { isEditing = true }
                     Divider()
-                    Button("삭제", role: .destructive) { showDeleteConfirm = true }
+                    Button("삭제", role: .destructive) {
+                        AlertManager.shared.confirm(
+                            title: "협찬을 삭제하시겠습니까?",
+                            message: "삭제된 협찬은 복구할 수 없습니다"
+                        ) {
+                            Task {
+                                await DataManager.shared.deleteSponsorship(id: sponsorshipId)
+                                dismiss()
+                            }
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .foregroundStyle(theme.primary)
@@ -50,15 +60,6 @@ struct SponsorshipDetailView: View {
             if let sponsorship {
                 SponsorshipFormView(editingSponsorship: sponsorship)
             }
-        }
-        .confirmationDialog("협찬을 삭제하시겠습니까?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("삭제", role: .destructive) {
-                Task {
-                    await DataManager.shared.deleteSponsorship(id: sponsorshipId)
-                    dismiss()
-                }
-            }
-            Button("취소", role: .cancel) {}
         }
     }
 
@@ -176,7 +177,15 @@ struct SponsorshipDetailView: View {
 
                 // 삭제 버튼
                 Button {
-                    showDeleteConfirm = true
+                    AlertManager.shared.confirm(
+                        title: "협찬을 삭제하시겠습니까?",
+                        message: "삭제된 협찬은 복구할 수 없습니다"
+                    ) {
+                        Task {
+                            await DataManager.shared.deleteSponsorship(id: sponsorshipId)
+                            dismiss()
+                        }
+                    }
                 } label: {
                     Label("협찬 삭제", systemImage: "trash")
                         .font(.subheadline.bold())

@@ -92,6 +92,7 @@ struct WorkspaceSetupView: View {
 
                 Button {
                     onComplete()
+                    dismiss()
                 } label: {
                     Text("나중에 할게요")
                         .font(.system(.footnote, design: .rounded))
@@ -103,10 +104,10 @@ struct WorkspaceSetupView: View {
         }
         .background(theme.background.ignoresSafeArea())
         .preferredColorScheme(theme.colorScheme)
-        .alert("오류", isPresented: $showError) {
-            Button("확인", role: .cancel) {}
-        } message: {
-            Text(errorMessage ?? "")
+        .onChange(of: showError) {
+            guard showError, let msg = errorMessage else { return }
+            showError = false
+            AlertManager.shared.show(title: "오류", message: msg)
         }
     }
 
@@ -273,7 +274,9 @@ struct WorkspaceSetupView: View {
         let success = await WorkspaceManager.shared.createWorkspace(name: workspaceName.trimmingCharacters(in: .whitespaces))
         if success {
             await DataManager.shared.fetchAll()
+            ToastManager.shared.show("워크스페이스가 생성되었습니다", icon: "checkmark.circle.fill")
             onComplete()
+            dismiss()
         } else {
             errorMessage = WorkspaceManager.shared.errorMessage ?? "워크스페이스 생성에 실패했습니다"
             showError = true
@@ -285,7 +288,9 @@ struct WorkspaceSetupView: View {
         defer { isLoading = false }
         let success = await WorkspaceManager.shared.joinWithCode(inviteCode)
         if success {
+            ToastManager.shared.show("참여 요청이 완료되었습니다", icon: "person.badge.plus")
             onComplete()
+            dismiss()
         } else {
             errorMessage = WorkspaceManager.shared.errorMessage ?? "참여에 실패했습니다"
             showError = true

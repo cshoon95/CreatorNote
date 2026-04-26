@@ -21,7 +21,7 @@ struct InflueApp: App {
 
 struct RootView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @State private var authChecked = false
+    @State private var ready = false
     @State private var showOnboarding = !UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
     @State private var skippedWorkspaceSetup = false
     @State private var skippedPendingApproval = false
@@ -29,10 +29,16 @@ struct RootView: View {
     var body: some View {
         let wm = WorkspaceManager.shared
         Group {
-            if !authChecked {
+            if !ready {
                 SplashView()
             } else if !AuthManager.shared.isAuthenticated {
                 LoginView()
+                    .onDisappear {
+                        // 로그인 직후 워크스페이스 로드
+                        Task {
+                            await WorkspaceManager.shared.fetchWorkspaces()
+                        }
+                    }
             } else if showOnboarding {
                 OnboardingView {
                     showOnboarding = false
@@ -51,7 +57,17 @@ struct RootView: View {
         }
         .task {
             await AuthManager.shared.checkSession()
-            authChecked = true
+            if AuthManager.shared.isAuthenticated {
+                await WorkspaceManager.shared.fetchWorkspaces()
+            }
+            ready = true
+        }
+        .onChange(of: AuthManager.shared.isAuthenticated) {
+            if AuthManager.shared.isAuthenticated {
+                Task {
+                    await WorkspaceManager.shared.fetchWorkspaces()
+                }
+            }
         }
     }
 }

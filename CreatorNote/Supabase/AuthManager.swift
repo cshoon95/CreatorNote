@@ -174,7 +174,7 @@ final class AuthManager {
                 let name = displayName
                     ?? user.userMetadata["full_name"]?.value as? String
                     ?? user.userMetadata["name"]?.value as? String
-                    ?? "사용자"
+                    ?? Self.randomKoreanNickname()
                 let newProfile = Profile(
                     id: user.id,
                     displayName: name,
@@ -208,6 +208,12 @@ final class AuthManager {
         } catch {
             errorMessage = "닉네임 변경에 실패했습니다: \(error.localizedDescription)"
         }
+    }
+
+    private static func randomKoreanNickname() -> String {
+        let adjectives = ["귀여운", "빛나는", "씩씩한", "따뜻한", "활발한", "행복한", "신나는", "용감한", "멋있는", "상큼한", "재밌는", "영리한", "든든한", "슬기로운"]
+        let nouns = ["크리에이터", "작가", "별", "달", "나무", "구름", "바다", "하늘", "꽃", "새", "나비", "토끼", "고양이", "여우"]
+        return (adjectives.randomElement() ?? "멋진") + (nouns.randomElement() ?? "크리에이터")
     }
 
     // MARK: - Private

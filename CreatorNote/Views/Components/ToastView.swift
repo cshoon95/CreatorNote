@@ -34,7 +34,7 @@ struct ToastOverlay: ViewModifier {
     let toast = ToastManager.shared
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: .top) {
+        content.overlay(alignment: .bottom) {
             if toast.isShowing {
                 HStack(spacing: 8) {
                     Image(systemName: toast.icon)
@@ -49,8 +49,8 @@ struct ToastOverlay: ViewModifier {
                 .background(.black.opacity(0.75))
                 .clipShape(Capsule())
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
-                .padding(.top, 8)
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .padding(.bottom, 60)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }

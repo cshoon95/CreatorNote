@@ -116,13 +116,16 @@ struct WorkspaceSettingsView: View {
         .background(theme.background)
         .navigationTitle("워크스페이스")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("참여 요청 취소", isPresented: $showCancelPendingAlert) {
-            Button("취소하기", role: .destructive) {
+        .onChange(of: showCancelPendingAlert) {
+            guard showCancelPendingAlert else { return }
+            showCancelPendingAlert = false
+            AlertManager.shared.confirm(
+                title: "참여 요청 취소",
+                message: "참여 요청을 취소하면 처음부터 다시 시도해야 합니다.",
+                confirmTitle: "취소하기"
+            ) {
                 Task { await WorkspaceManager.shared.cancelPendingRequest() }
             }
-            Button("계속 대기", role: .cancel) {}
-        } message: {
-            Text("참여 요청을 취소하면 처음부터 다시 시도해야 합니다.")
         }
     }
 
@@ -340,49 +343,61 @@ struct WorkspaceSettingsView: View {
         .background(theme.background)
         .navigationTitle("워크스페이스")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("워크스페이스 나가기", isPresented: $showLeaveAlert) {
-            Button("나가기", role: .destructive) {
+        .onChange(of: showLeaveAlert) {
+            guard showLeaveAlert else { return }
+            showLeaveAlert = false
+            AlertManager.shared.confirm(
+                title: "워크스페이스 나가기",
+                message: "이 워크스페이스에서 나가시겠습니까?",
+                confirmTitle: "나가기"
+            ) {
                 Task { await WorkspaceManager.shared.leaveWorkspace() }
             }
-            Button("취소", role: .cancel) {}
-        } message: {
-            Text("이 워크스페이스에서 나가시겠습니까?")
         }
-        .alert("워크스페이스 삭제", isPresented: $showDeleteAlert) {
-            Button("삭제", role: .destructive) {
+        .onChange(of: showDeleteAlert) {
+            guard showDeleteAlert else { return }
+            showDeleteAlert = false
+            AlertManager.shared.confirm(
+                title: "워크스페이스 삭제",
+                message: "워크스페이스와 모든 데이터가 영구적으로 삭제됩니다. 계속하시겠습니까?"
+            ) {
                 Task { await WorkspaceManager.shared.deleteWorkspace() }
             }
-            Button("취소", role: .cancel) {}
-        } message: {
-            Text("워크스페이스와 모든 데이터가 영구적으로 삭제됩니다. 계속하시겠습니까?")
         }
-        .alert("참여 요청", isPresented: $showApproveAlert) {
-            Button("승인") {
-                if let member = memberToApprove {
-                    Task { await WorkspaceManager.shared.approveMember(userId: member.id) }
-                }
-                memberToApprove = nil
-            }
-            Button("거절", role: .destructive) {
-                if let member = memberToApprove {
-                    Task { await WorkspaceManager.shared.rejectMember(userId: member.id) }
-                }
-                memberToApprove = nil
-            }
-            Button("취소", role: .cancel) { memberToApprove = nil }
-        } message: {
-            Text("\(memberToApprove?.displayName ?? "알 수 없음")님이 워크스페이스에 참여하고 싶어합니다.")
+        .onChange(of: showApproveAlert) {
+            guard showApproveAlert else { return }
+            showApproveAlert = false
+            let member = memberToApprove
+            let name = member?.displayName ?? "알 수 없음"
+            AlertManager.shared.show(
+                title: "참여 요청",
+                message: "\(name)님이 워크스페이스에 참여하고 싶어합니다.",
+                buttons: [
+                    .init("취소", role: .cancel) { memberToApprove = nil },
+                    .init("거절", role: .destructive) {
+                        if let m = member { Task { await WorkspaceManager.shared.rejectMember(userId: m.id) } }
+                        memberToApprove = nil
+                    },
+                    .init("승인") {
+                        if let m = member { Task { await WorkspaceManager.shared.approveMember(userId: m.id) } }
+                        memberToApprove = nil
+                    }
+                ]
+            )
         }
-        .alert("멤버 추방", isPresented: $showRemoveAlert) {
-            Button("추방", role: .destructive) {
-                if let member = memberToRemove {
-                    Task { await WorkspaceManager.shared.removeMember(userId: member.id) }
-                }
+        .onChange(of: showRemoveAlert) {
+            guard showRemoveAlert else { return }
+            showRemoveAlert = false
+            let member = memberToRemove
+            let name = member?.displayName ?? "이 멤버"
+            AlertManager.shared.confirm(
+                title: "멤버 추방",
+                message: "\(name)를 워크스페이스에서 추방하시겠습니까?",
+                confirmTitle: "추방"
+            ) {
+                if let m = member { Task { await WorkspaceManager.shared.removeMember(userId: m.id) } }
                 memberToRemove = nil
             }
-            Button("취소", role: .cancel) { memberToRemove = nil }
-        } message: {
-            Text("\(memberToRemove?.displayName ?? "이 멤버")를 워크스페이스에서 추방하시겠습니까?")
         }
         .task {
             await WorkspaceManager.shared.fetchMembers()

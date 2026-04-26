@@ -168,40 +168,43 @@ struct SponsorshipCalendarView: View {
 
                         if !selectedSponsors.isEmpty {
                             ForEach(selectedSponsors) { s in
-                                ThemedCard {
-                                    HStack {
-                                        Circle()
-                                            .fill(theme.primary)
-                                            .frame(width: 32, height: 32)
-                                            .overlay {
-                                                Text(String(s.brandName.prefix(1)))
-                                                    .font(.caption.bold())
-                                                    .foregroundStyle(.white)
+                                NavigationLink(destination: SponsorshipDetailView(sponsorshipId: s.id)) {
+                                    ThemedCard {
+                                        HStack {
+                                            Circle()
+                                                .fill(theme.primary)
+                                                .frame(width: 32, height: 32)
+                                                .overlay {
+                                                    Text(String(s.brandName.prefix(1)))
+                                                        .font(.caption.bold())
+                                                        .foregroundStyle(.white)
+                                                }
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(s.brandName)
+                                                    .font(.subheadline.bold())
+                                                    .foregroundStyle(theme.textPrimary)
+                                                Text(s.productName)
+                                                    .font(.caption)
+                                                    .foregroundStyle(theme.textSecondary)
                                             }
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(s.brandName)
-                                                .font(.subheadline.bold())
-                                                .foregroundStyle(theme.textPrimary)
-                                            Text(s.productName)
-                                                .font(.caption)
-                                                .foregroundStyle(theme.textSecondary)
-                                        }
-                                        Spacer()
-                                        if isEndDate(selectedDate, for: s) {
-                                            Text("마감일")
-                                                .font(.caption.bold())
-                                                .foregroundStyle(.red)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(Color.red.opacity(0.1))
-                                                .clipShape(Capsule())
-                                        } else {
-                                            Text("D-\(s.daysRemaining)")
-                                                .font(.caption.bold())
-                                                .foregroundStyle(theme.primary)
+                                            Spacer()
+                                            if isEndDate(selectedDate, for: s) {
+                                                Text("마감일")
+                                                    .font(.caption.bold())
+                                                    .foregroundStyle(.red)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(Color.red.opacity(0.1))
+                                                    .clipShape(Capsule())
+                                            } else {
+                                                Text("D-\(s.daysRemaining)")
+                                                    .font(.caption.bold())
+                                                    .foregroundStyle(theme.primary)
+                                            }
                                         }
                                     }
                                 }
+                                .buttonStyle(.plain)
                                 .padding(.horizontal)
                             }
                         } else {
@@ -258,10 +261,10 @@ struct SponsorshipCalendarView: View {
                     }
                 }
             }
-            .alert("캘린더 내보내기", isPresented: $showExportAlert) {
-                Button("확인", role: .cancel) {}
-            } message: {
-                Text(exportMessage)
+            .onChange(of: showExportAlert) {
+                guard showExportAlert else { return }
+                showExportAlert = false
+                AlertManager.shared.show(title: "캘린더 내보내기", message: exportMessage)
             }
             .refreshable {
                 await DataManager.shared.fetchSponsorships()

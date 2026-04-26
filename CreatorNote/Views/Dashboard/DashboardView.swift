@@ -4,6 +4,7 @@ struct DashboardView: View {
     @Environment(ThemeManager.self) private var themeManager
 
     private var sponsorships: [SponsorshipDTO] { DataManager.shared.sponsorships }
+    private var settlements: [SettlementDTO] { DataManager.shared.settlements }
     private var reelsNotes: [ReelsNoteDTO] { DataManager.shared.reelsNotes }
     private var generalNotes: [GeneralNoteDTO] { DataManager.shared.generalNotes }
 
@@ -20,7 +21,7 @@ struct DashboardView: View {
         pendingSettlements.reduce(0) { $0 + $1.amount }
     }
     private var totalEarnings: Double {
-        sponsorships.filter { $0.sponsorshipStatus == .completed }.reduce(0) { $0 + $1.amount }
+        settlements.reduce(0) { $0 + $1.netAmount }
     }
     private var todayDeadlines: [SponsorshipDTO] {
         sponsorships.filter { Calendar.current.isDateInToday($0.endDate) }
@@ -52,22 +53,29 @@ struct DashboardView: View {
                         .padding(.top, 20)
 
                     HStack(spacing: 12) {
-                        miniStatCard(
-                            title: "총 수익",
-                            icon: "wonsign.circle.fill",
-                            iconColor: theme.primary,
-                            primary: totalEarnings.krwFormatted,
-                            sub: "완료된 협찬",
-                            theme: theme
-                        )
-                        miniStatCard(
-                            title: "전체 노트",
-                            icon: "note.text",
-                            iconColor: theme.accent,
-                            primary: "\(reelsNotes.count + generalNotes.count)",
-                            sub: "릴스 \(reelsNotes.count) · 메모 \(generalNotes.count)",
-                            theme: theme
-                        )
+                        NavigationLink(destination: SettlementListView()) {
+                            miniStatCard(
+                                title: "총 수익",
+                                icon: "wonsign.circle.fill",
+                                iconColor: theme.primary,
+                                primary: totalEarnings.krwFormatted,
+                                sub: "총 실수령액",
+                                theme: theme
+                            )
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: NotesTabView()) {
+                            miniStatCard(
+                                title: "전체 노트",
+                                icon: "note.text",
+                                iconColor: theme.accent,
+                                primary: "\(reelsNotes.count + generalNotes.count)",
+                                sub: "릴스 \(reelsNotes.count) · 메모 \(generalNotes.count)",
+                                theme: theme
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal)
 
@@ -91,7 +99,7 @@ struct DashboardView: View {
                         emptyState(theme: theme)
                     }
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, 100)
             }
             .background(theme.background)
             .refreshable { await DataManager.shared.fetchAll() }
@@ -201,6 +209,7 @@ struct DashboardView: View {
                 .padding(.horizontal)
 
             ForEach(todayDeadlines) { item in
+                NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
                 ThemedCard {
                     HStack(spacing: 12) {
                         Circle()
@@ -229,10 +238,13 @@ struct DashboardView: View {
                             .clipShape(Capsule())
                     }
                 }
+                }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
 
             ForEach(urgentItems.filter { urgent in !todayDeadlines.contains(where: { d in d.id == urgent.id }) }) { item in
+                NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
                 ThemedCard {
                     HStack(spacing: 12) {
                         Circle()
@@ -257,10 +269,13 @@ struct DashboardView: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
 
             ForEach(draftNotes.prefix(2)) { note in
+                NavigationLink(destination: NoteEditorView(reelsNote: note)) {
                 ThemedCard {
                     HStack(spacing: 12) {
                         Circle()
@@ -283,6 +298,8 @@ struct DashboardView: View {
                         StatusBadge(status: note.reelsNoteStatus)
                     }
                 }
+                }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
         }
@@ -344,37 +361,40 @@ struct DashboardView: View {
                 .padding(.horizontal)
 
             ForEach(expiringSoon) { item in
-                ThemedCard {
-                    HStack(spacing: 12) {
-                        Circle()
-                            .fill(theme.primary)
-                            .frame(width: 44, height: 44)
-                            .overlay {
-                                Text(String(item.brandName.prefix(1)))
+                NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
+                    ThemedCard {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(theme.primary)
+                                .frame(width: 44, height: 44)
+                                .overlay {
+                                    Text(String(item.brandName.prefix(1)))
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(.white)
+                                }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.brandName)
                                     .font(.subheadline.bold())
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(theme.textPrimary)
+                                if !item.productName.isEmpty {
+                                    Text(item.productName)
+                                        .font(.caption)
+                                        .foregroundStyle(theme.textSecondary)
+                                }
                             }
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.brandName)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(theme.textPrimary)
-                            if !item.productName.isEmpty {
-                                Text(item.productName)
-                                    .font(.caption)
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("D-\(item.daysRemaining)")
+                                    .font(.title3.bold())
+                                    .foregroundStyle(.orange)
+                                Text("남음")
+                                    .font(.caption2)
                                     .foregroundStyle(theme.textSecondary)
                             }
                         }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("D-\(item.daysRemaining)")
-                                .font(.title3.bold())
-                                .foregroundStyle(.orange)
-                            Text("남음")
-                                .font(.caption2)
-                                .foregroundStyle(theme.textSecondary)
-                        }
                     }
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
         }
@@ -388,25 +408,28 @@ struct DashboardView: View {
                 .padding(.horizontal)
 
             ForEach(reelsNotes.prefix(3)) { note in
-                ThemedCard {
-                    HStack(spacing: 12) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(note.reelsNoteStatus.color.opacity(0.8))
-                            .frame(width: 4, height: 44)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(note.title.isEmpty ? "제목 없음" : note.title)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(theme.textPrimary)
-                                .lineLimit(1)
-                            Text(note.plainContent.isEmpty ? "내용 없음" : note.plainContent)
-                                .font(.caption)
-                                .foregroundStyle(theme.textSecondary)
-                                .lineLimit(1)
+                NavigationLink(destination: NoteEditorView(reelsNote: note)) {
+                    ThemedCard {
+                        HStack(spacing: 12) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(note.reelsNoteStatus.color.opacity(0.8))
+                                .frame(width: 4, height: 44)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(theme.textPrimary)
+                                    .lineLimit(1)
+                                Text(note.plainContent.isEmpty ? "내용 없음" : note.plainContent)
+                                    .font(.caption)
+                                    .foregroundStyle(theme.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            StatusBadge(status: note.reelsNoteStatus)
                         }
-                        Spacer()
-                        StatusBadge(status: note.reelsNoteStatus)
                     }
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal)
             }
         }

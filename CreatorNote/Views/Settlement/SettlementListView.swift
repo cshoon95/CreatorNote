@@ -99,19 +99,16 @@ struct SettlementListView: View {
                 }
             }
             .sheet(isPresented: $showingAddSheet) { SettlementFormView() }
-            .alert("정산 내역을 삭제할까요?", isPresented: Binding(
-                get: { settlementToDelete != nil },
-                set: { if !$0 { settlementToDelete = nil } }
-            )) {
-                Button("취소", role: .cancel) { settlementToDelete = nil }
-                Button("삭제", role: .destructive) {
-                    if let item = settlementToDelete {
-                        Task { await DataManager.shared.deleteSettlement(id: item.id) }
-                        settlementToDelete = nil
-                    }
+            .onChange(of: settlementToDelete?.id) {
+                guard let item = settlementToDelete else { return }
+                let itemId = item.id
+                settlementToDelete = nil
+                AlertManager.shared.confirm(
+                    title: "정산 내역을 삭제할까요?",
+                    message: "삭제된 정산 내역은 복구할 수 없습니다"
+                ) {
+                    Task { await DataManager.shared.deleteSettlement(id: itemId) }
                 }
-            } message: {
-                Text("삭제된 정산 내역은 복구할 수 없습니다")
             }
         }
     }
@@ -128,7 +125,7 @@ struct SettlementListView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 32)
-            .padding(.bottom, 24)
+            .padding(.bottom, 100)
 
             Rectangle()
                 .fill(.white.opacity(0.2))

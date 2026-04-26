@@ -88,19 +88,16 @@ struct GeneralNoteListView: View {
         .sheet(isPresented: $showingNewNote) {
             NoteEditorView(generalNote: nil)
         }
-        .alert("메모를 삭제할까요?", isPresented: Binding(
-            get: { noteToDelete != nil },
-            set: { if !$0 { noteToDelete = nil } }
-        )) {
-            Button("취소", role: .cancel) { noteToDelete = nil }
-            Button("삭제", role: .destructive) {
-                if let note = noteToDelete {
-                    Task { await DataManager.shared.deleteGeneralNote(id: note.id) }
-                    noteToDelete = nil
-                }
+        .onChange(of: noteToDelete?.id) {
+            guard let note = noteToDelete else { return }
+            let noteId = note.id
+            noteToDelete = nil
+            AlertManager.shared.confirm(
+                title: "메모를 삭제할까요?",
+                message: "삭제된 메모는 복구할 수 없습니다"
+            ) {
+                Task { await DataManager.shared.deleteGeneralNote(id: noteId) }
             }
-        } message: {
-            Text("삭제된 메모는 복구할 수 없습니다")
         }
     }
 

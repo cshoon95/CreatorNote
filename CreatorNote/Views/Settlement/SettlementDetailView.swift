@@ -45,7 +45,17 @@ struct SettlementDetailView: View {
                 Menu {
                     Button("편집") { isEditing = true }
                     Divider()
-                    Button("삭제", role: .destructive) { showDeleteConfirm = true }
+                    Button("삭제", role: .destructive) {
+                        AlertManager.shared.confirm(
+                            title: "정산을 삭제하시겠습니까?",
+                            message: "삭제된 정산은 복구할 수 없습니다"
+                        ) {
+                            Task {
+                                await DataManager.shared.deleteSettlement(id: settlement.id)
+                                dismiss()
+                            }
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .foregroundStyle(theme.primary)
@@ -54,15 +64,6 @@ struct SettlementDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             SettlementFormView(editingSettlement: settlement)
-        }
-        .confirmationDialog("정산을 삭제하시겠습니까?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("삭제", role: .destructive) {
-                Task {
-                    await DataManager.shared.deleteSettlement(id: settlement.id)
-                    dismiss()
-                }
-            }
-            Button("취소", role: .cancel) {}
         }
         .onAppear {
             isPaidLocal = settlement.isPaid

@@ -5,6 +5,15 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .home
     @State private var navigationResetID = UUID()
 
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .systemBackground
+        appearance.shadowColor = .separator
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
+
     enum Tab: String, CaseIterable {
         case home = "홈"
         case sponsorship = "협찬"
@@ -25,32 +34,69 @@ struct ContentView: View {
 
     var body: some View {
         let theme = themeManager.theme
-        TabView(selection: tabSelection) {
-            ForEach(Tab.allCases, id: \.self) { tab in
-                Group {
-                    switch tab {
-                    case .home:
+        ZStack(alignment: .bottom) {
+            // 콘텐츠 영역
+            Group {
+                switch selectedTab {
+                case .home:
+                    NavigationStack {
                         DashboardView()
-                            .id(tab == .home ? navigationResetID : UUID())
-                    case .sponsorship:
+                            .id(navigationResetID)
+                    }
+                case .sponsorship:
+                    NavigationStack {
                         SponsorshipListView()
-                    case .settlement:
+                    }
+                case .settlement:
+                    NavigationStack {
                         SettlementListView()
-                    case .calendar:
+                    }
+                case .calendar:
+                    NavigationStack {
                         SponsorshipCalendarView()
-                    case .notes:
+                    }
+                case .notes:
+                    NavigationStack {
                         NotesTabView()
                     }
                 }
-                .tabItem {
-                    Image(systemName: tab.icon)
-                    Text(tab.rawValue)
-                }
-                .tag(tab)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, 56)
+
+            // 커스텀 탭바
+            HStack {
+                ForEach(Tab.allCases, id: \.self) { tab in
+                    Button {
+                        if selectedTab == tab {
+                            navigationResetID = UUID()
+                        }
+                        selectedTab = tab
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 20))
+                            Text(tab.rawValue)
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundStyle(selectedTab == tab ? theme.primary : Color.gray)
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 2)
+            .background(
+                Rectangle()
+                    .fill(theme.cardBackground)
+                    .shadow(color: .black.opacity(0.08), radius: 4, y: -2)
+                    .ignoresSafeArea(edges: .bottom)
+            )
         }
         .tint(theme.primary)
-        .overlay(alignment: .top) {
+        .withToast()
+        .withCustomAlert()
+        .overlay(alignment: .bottom) {
             if let msg = DataManager.shared.errorMessage {
                 Text(msg)
                     .font(.subheadline.bold())
@@ -59,8 +105,8 @@ struct ContentView: View {
                     .padding(.vertical, 12)
                     .background(.red.gradient, in: Capsule())
                     .shadow(color: .red.opacity(0.3), radius: 8, y: 4)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .padding(.bottom, 60)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.spring(duration: 0.4), value: DataManager.shared.errorMessage)

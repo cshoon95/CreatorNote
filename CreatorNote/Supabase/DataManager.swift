@@ -18,6 +18,16 @@ final class DataManager {
 
     private init() { loadCache() }
 
+    func clearAll() {
+        sponsorships = []
+        settlements = []
+        reelsNotes = []
+        generalNotes = []
+        errorMessage = nil
+        try? FileManager.default.removeItem(at: Self.cacheDir)
+        try? FileManager.default.createDirectory(at: Self.cacheDir, withIntermediateDirectories: true)
+    }
+
     private var errorCounter = 0
     private var isFetching = false
 

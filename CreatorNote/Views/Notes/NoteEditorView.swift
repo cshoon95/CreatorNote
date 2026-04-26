@@ -185,10 +185,10 @@ struct NoteEditorView: View {
                 }
                 .presentationDetents([.large])
             }
-            .alert("오류", isPresented: $showError) {
-                Button("확인", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
+            .onChange(of: showError) {
+                guard showError, let msg = errorMessage else { return }
+                showError = false
+                AlertManager.shared.show(title: "오류", message: msg)
             }
         }
     }
@@ -295,7 +295,12 @@ struct NoteEditorView: View {
               let data = Data(base64Encoded: base64String),
               let attr = try? NSAttributedString(data: data, options: [
                   .documentType: NSAttributedString.DocumentType.rtf
-              ], documentAttributes: nil) else { return }
+              ], documentAttributes: nil) else {
+            if !plainContent.isEmpty {
+                attributedContent = NSAttributedString(string: plainContent)
+            }
+            return
+        }
         attributedContent = attr
     }
 

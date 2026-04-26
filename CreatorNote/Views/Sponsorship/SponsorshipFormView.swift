@@ -11,7 +11,7 @@ struct SponsorshipFormView: View {
     @State private var details = ""
     @State private var amountText = ""
     @State private var startDate = Date()
-    @State private var endDate = Date().addingTimeInterval(86400 * 30)
+    @State private var endDate = Date()
     @State private var status: SponsorshipStatus = .preSubmit
     @State private var isPinned = false
     @State private var isLoading = false
@@ -96,6 +96,11 @@ struct SponsorshipFormView: View {
                                 DatePicker("종료일", selection: $endDate, in: startDate..., displayedComponents: .date)
                                     .foregroundStyle(theme.textPrimary)
                                     .tint(theme.primary)
+                            }
+                        }
+                        .onChange(of: startDate) {
+                            if endDate < startDate {
+                                endDate = startDate
                             }
                         }
                     }
@@ -201,10 +206,10 @@ struct SponsorshipFormView: View {
                 }
             }
             .onAppear { loadIfEditing() }
-            .alert("오류", isPresented: $showError) {
-                Button("확인", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
+            .onChange(of: showError) {
+                guard showError, let msg = errorMessage else { return }
+                showError = false
+                AlertManager.shared.show(title: "오류", message: msg)
             }
         }
     }

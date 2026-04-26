@@ -58,6 +58,7 @@
 		EA667887F130282C612F0672 /* NotesTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B646CD7FCB1D3379592114CD /* NotesTabView.swift */; };
 		EEAA169464F18EB47BC82600 /* ReelsNoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */; };
 		TOAST001DC7BEFC59DC21291 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOAST002F9F72D32CCD70233 /* ToastView.swift */; };
+		CALRT001DC7BEFC59DC21291 /* CustomAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CALRT002F9F72D32CCD70233 /* CustomAlertView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -114,6 +115,7 @@
 		FD6F811EF576210C7995FE4A /* SponsorshipDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SponsorshipDTO.swift; sourceTree = "<group>"; };
 		FF3137D34E381253BECF46C4 /* SponsorshipDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SponsorshipDetailView.swift; sourceTree = "<group>"; };
 		TOAST002F9F72D32CCD70233 /* ToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastView.swift; sourceTree = "<group>"; };
+		CALRT002F9F72D32CCD70233 /* CustomAlertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomAlertView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -343,6 +345,7 @@
 				45792F79F8518A088EF45AF4 /* GradientAvatarView.swift */,
 				99D44A099D8A7936AA94F93A /* EmptyStateView.swift */,
 				TOAST002F9F72D32CCD70233 /* ToastView.swift */,
+				CALRT002F9F72D32CCD70233 /* CustomAlertView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -425,6 +428,7 @@
 			files = (
 				9C15CE9EC3F0716E54B8459B /* AppTheme.swift in Sources */,
 				TOAST001DC7BEFC59DC21291 /* ToastView.swift in Sources */,
+				CALRT001DC7BEFC59DC21291 /* CustomAlertView.swift in Sources */,
 				710ADF75CAD3F2CF54153EF0 /* AuthManager.swift in Sources */,
 				0BEA874C9DE2D5EA9A69E567 /* ContentView.swift in Sources */,
 				CAE222F939561A9028407B93 /* CreatorNoteApp.swift in Sources */,
@@ -484,14 +488,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -506,14 +510,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 23;
+				CURRENT_PROJECT_VERSION = 26;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.2;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;

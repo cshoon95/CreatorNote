@@ -28,25 +28,30 @@ struct ProfileView: View {
         .background(theme.background)
         .navigationTitle("프로필")
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("계정 탈퇴", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
-            Button("탈퇴하기", role: .destructive) {
+        .onChange(of: showDeleteConfirmation) {
+            guard showDeleteConfirmation else { return }
+            showDeleteConfirmation = false
+            AlertManager.shared.confirm(
+                title: "계정 탈퇴",
+                message: "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?",
+                confirmTitle: "탈퇴하기"
+            ) {
                 Task { await deleteAccount() }
             }
-            Button("취소", role: .cancel) { }
-        } message: {
-            Text("계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?")
         }
-        .alert("오류", isPresented: $showError) {
-            Button("확인", role: .cancel) { }
-        } message: {
-            Text(errorMessage ?? "알 수 없는 오류가 발생했습니다.")
+        .onChange(of: showError) {
+            guard showError else { return }
+            showError = false
+            AlertManager.shared.show(title: "오류", message: errorMessage ?? "알 수 없는 오류가 발생했습니다.")
         }
-        .alert("탈퇴 완료", isPresented: $showDeleteSuccess) {
-            Button("확인") {
-                AuthManager.shared.isAuthenticated = false
-            }
-        } message: {
-            Text("계정이 성공적으로 삭제되었습니다.")
+        .onChange(of: showDeleteSuccess) {
+            guard showDeleteSuccess else { return }
+            showDeleteSuccess = false
+            AlertManager.shared.show(
+                title: "탈퇴 완료",
+                message: "계정이 성공적으로 삭제되었습니다.",
+                buttons: [.init("확인") { AuthManager.shared.isAuthenticated = false }]
+            )
         }
         .task {
             await loadProfile()

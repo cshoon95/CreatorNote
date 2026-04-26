@@ -459,6 +459,7 @@ final class WorkspaceManager {
         members = []
         pendingMembers = []
         UserDefaults.standard.removeObject(forKey: "current_workspace_id")
+        DataManager.shared.clearAll()
     }
 }
 

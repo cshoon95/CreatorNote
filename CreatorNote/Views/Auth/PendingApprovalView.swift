@@ -126,13 +126,16 @@ struct PendingApprovalView: View {
                 .padding(.bottom, 48)
             }
         }
-        .alert("참여 요청 취소", isPresented: $showCancelAlert) {
-            Button("취소하기", role: .destructive) {
+        .onChange(of: showCancelAlert) {
+            guard showCancelAlert else { return }
+            showCancelAlert = false
+            AlertManager.shared.confirm(
+                title: "참여 요청 취소",
+                message: "참여 요청을 취소하면 처음부터 다시 시도해야 합니다.",
+                confirmTitle: "취소하기"
+            ) {
                 Task { await WorkspaceManager.shared.cancelPendingRequest() }
             }
-            Button("계속 대기", role: .cancel) {}
-        } message: {
-            Text("참여 요청을 취소하면 처음부터 다시 시도해야 합니다.")
         }
         .onReceive(timer) { _ in
             Task { await checkStatus() }

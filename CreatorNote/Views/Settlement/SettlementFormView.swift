@@ -223,10 +223,10 @@ struct SettlementFormView: View {
                 }
             }
             .onAppear { loadIfEditing() }
-            .alert("오류", isPresented: $showError) {
-                Button("확인", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
+            .onChange(of: showError) {
+                guard showError, let msg = errorMessage else { return }
+                showError = false
+                AlertManager.shared.show(title: "오류", message: msg)
             }
         }
     }
