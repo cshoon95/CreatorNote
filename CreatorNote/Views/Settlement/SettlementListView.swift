@@ -70,6 +70,10 @@ struct SettlementListView: View {
                             .padding(.horizontal)
                         }
 
+                        AdBannerContainer()
+                            .padding(.horizontal)
+                            .padding(.top, 16)
+
                         Spacer().frame(height: 100)
                     }
                 }

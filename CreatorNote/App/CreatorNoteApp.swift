@@ -1,9 +1,14 @@
 import SwiftUI
 @preconcurrency import Supabase
+import GoogleMobileAds
 
 @main
 struct InflueApp: App {
     @State private var themeManager = ThemeManager.shared
+
+    init() {
+        GADMobileAds.sharedInstance().start(completionHandler: nil)
+    }
 
     var body: some Scene {
         WindowGroup {

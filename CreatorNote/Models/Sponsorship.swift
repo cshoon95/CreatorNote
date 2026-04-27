@@ -3,7 +3,7 @@ import Foundation
 enum SponsorshipStatus: String, Codable, CaseIterable {
     case preSubmit = "preSubmit"
     case underReview = "underReview"
-    case submitted = "submitted"
+    case submitted = "submitted" // 레거시 - UI에서 숨김
     case pendingSettlement = "pendingSettlement"
     case completed = "completed"
 

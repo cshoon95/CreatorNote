@@ -21,7 +21,7 @@ struct DashboardView: View {
         pendingSettlements.reduce(0) { $0 + $1.amount }
     }
     private var totalEarnings: Double {
-        settlements.reduce(0) { $0 + $1.netAmount }
+        sponsorships.filter { $0.sponsorshipStatus == .completed }.reduce(0) { $0 + $1.amount }
     }
     private var todayDeadlines: [SponsorshipDTO] {
         sponsorships.filter { Calendar.current.isDateInToday($0.endDate) }
@@ -99,6 +99,10 @@ struct DashboardView: View {
                         emptyState(theme: theme)
                     }
                 }
+                AdBannerContainer()
+                    .padding(.horizontal)
+                    .padding(.top, 16)
+
                 .padding(.bottom, 100)
             }
             .background(theme.background)

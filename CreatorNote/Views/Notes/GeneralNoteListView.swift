@@ -61,6 +61,11 @@ struct GeneralNoteListView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 4)
+
+                        AdBannerContainer()
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+
                         .padding(.bottom, 96)
                     }
                 }

@@ -220,6 +220,10 @@ struct SponsorshipCalendarView: View {
                     }
                 }
                 .padding(.top, 16)
+
+                AdBannerContainer()
+                    .padding(.horizontal)
+
                 .padding(.bottom, 90)
             }
             .background(theme.background)

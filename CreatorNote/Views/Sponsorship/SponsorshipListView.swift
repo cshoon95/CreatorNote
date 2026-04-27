@@ -17,8 +17,12 @@ struct SponsorshipListView: View {
                 $0.productName.localizedCaseInsensitiveContains(searchText)
             }
         }
+        let statusOrder: [SponsorshipStatus] = [.preSubmit, .underReview, .pendingSettlement, .completed]
         return result.sorted { lhs, rhs in
             if lhs.isPinned != rhs.isPinned { return lhs.isPinned }
+            let lIdx = statusOrder.firstIndex(of: lhs.sponsorshipStatus) ?? 99
+            let rIdx = statusOrder.firstIndex(of: rhs.sponsorshipStatus) ?? 99
+            if lIdx != rIdx { return lIdx < rIdx }
             return lhs.createdAt > rhs.createdAt
         }
     }
@@ -86,6 +90,9 @@ struct SponsorshipListView: View {
                             .padding(.horizontal)
                         }
 
+                        AdBannerContainer()
+                            .padding(.top, 16)
+
                         Spacer().frame(height: 100)
                     }
                 }
@@ -137,9 +144,13 @@ struct SponsorshipListView: View {
 
                 VStack(alignment: .trailing, spacing: 6) {
                     SponsorshipStatusBadge(status: item.sponsorshipStatus)
-                    Text(item.isExpired ? "만료됨" : "D-\(item.daysRemaining)")
-                        .font(.caption2.bold())
-                        .foregroundStyle(item.isExpired ? .red : (item.isExpiringSoon ? .orange : theme.primary))
+                    if item.sponsorshipStatus != .pendingSettlement && item.sponsorshipStatus != .completed {
+                        Text(item.isExpired ? "만료됨" : "D-\(item.daysRemaining)")
+                            .font(.caption2.bold())
+                            .foregroundStyle(item.isExpired ? .red : (item.isExpiringSoon ? .orange : theme.primary))
+                            .scaleEffect(item.isExpiringSoon && !item.isExpired ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: item.isExpiringSoon)
+                    }
                 }
             }
 

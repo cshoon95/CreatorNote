@@ -39,26 +39,16 @@ struct ContentView: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    NavigationStack {
-                        DashboardView()
-                            .id(navigationResetID)
-                    }
+                    DashboardView()
+                        .id(navigationResetID)
                 case .sponsorship:
-                    NavigationStack {
-                        SponsorshipListView()
-                    }
+                    SponsorshipListView()
                 case .settlement:
-                    NavigationStack {
-                        SettlementListView()
-                    }
+                    SettlementListView()
                 case .calendar:
-                    NavigationStack {
-                        SponsorshipCalendarView()
-                    }
+                    SponsorshipCalendarView()
                 case .notes:
-                    NavigationStack {
-                        NotesTabView()
-                    }
+                    NotesTabView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

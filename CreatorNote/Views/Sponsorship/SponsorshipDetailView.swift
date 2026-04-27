@@ -125,7 +125,7 @@ struct SponsorshipDetailView: View {
                             .foregroundStyle(theme.textSecondary)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(SponsorshipStatus.allCases, id: \.self) { s in
+                                ForEach(SponsorshipStatus.allCases.filter { $0 != .submitted }, id: \.self) { s in
                                     Button {
                                         Haptic.selection()
                                         var updated = sponsorship

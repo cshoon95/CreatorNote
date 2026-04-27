@@ -59,6 +59,8 @@
 		EEAA169464F18EB47BC82600 /* ReelsNoteListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BFA4A56F2401606C51774BA /* ReelsNoteListView.swift */; };
 		TOAST001DC7BEFC59DC21291 /* ToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TOAST002F9F72D32CCD70233 /* ToastView.swift */; };
 		CALRT001DC7BEFC59DC21291 /* CustomAlertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CALRT002F9F72D32CCD70233 /* CustomAlertView.swift */; };
+		BANAD001F9F72D32CCD70233 /* BannerAdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BANAD002F9F72D32CCD70233 /* BannerAdView.swift */; };
+		GMADS001A098F4C0EBFA73BE /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = GMADS003C9DEF7562F4B0A8 /* GoogleMobileAds */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -97,6 +99,7 @@
 		AC11BD22CE33DF44EA55FB66 /* PendingApprovalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingApprovalView.swift; sourceTree = "<group>"; };
 		AEB7138426EDA8C5E2B48D23 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AF001F0824A23FC7EE25B8A3 /* ThemeSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
+		BANAD002F9F72D32CCD70233 /* BannerAdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerAdView.swift; sourceTree = "<group>"; };
 		B342E6EE89FCDC31C0B7FB8F /* SettlementDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettlementDetailView.swift; sourceTree = "<group>"; };
 		B646CD7FCB1D3379592114CD /* NotesTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotesTabView.swift; sourceTree = "<group>"; };
 		B8170FDD1BFD33D59AE7D010 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -124,6 +127,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				75A01D9EA098F4C0EBFA73BE /* Supabase in Frameworks */,
+				GMADS001A098F4C0EBFA73BE /* GoogleMobileAds in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -346,6 +350,7 @@
 				99D44A099D8A7936AA94F93A /* EmptyStateView.swift */,
 				TOAST002F9F72D32CCD70233 /* ToastView.swift */,
 				CALRT002F9F72D32CCD70233 /* CustomAlertView.swift */,
+			BANAD002F9F72D32CCD70233 /* BannerAdView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -368,6 +373,7 @@
 			name = CreatorNote;
 			packageProductDependencies = (
 				EEE97E619C9DEF7562F4B0A8 /* Supabase */,
+				GMADS003C9DEF7562F4B0A8 /* GoogleMobileAds */,
 			);
 			productName = CreatorNote;
 			productReference = 3248F9964F99AD51DB43CA68 /* CreatorNote.app */;
@@ -398,6 +404,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				D44B9746A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				GMADS002A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 459475006DA31FA6F4F20285 /* Products */;
@@ -475,6 +482,7 @@
 				46729D13684A69796AC6627E /* WorkspaceSetupView.swift in Sources */,
 				BA11CB22DC33ED44FE55AF66 /* PendingApprovalView.swift in Sources */,
 				CA8C627D8BC703524A5440F7 /* ThemeSettingsView.swift in Sources */,
+				BANAD001F9F72D32CCD70233 /* BannerAdView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -488,14 +496,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -510,14 +518,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 26;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.3;
+				MARKETING_VERSION = 1.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -668,6 +676,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		GMADS002A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.0.0;
+			};
+		};
 		D44B9746A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -683,6 +699,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = D44B9746A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		GMADS003C9DEF7562F4B0A8 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = GMADS002A618FAB0F9A3D066 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
