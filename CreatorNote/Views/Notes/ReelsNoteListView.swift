@@ -219,6 +219,25 @@ struct ReelsNoteListView: View {
                         .multilineTextAlignment(.leading)
                 }
 
+                if !note.imageUrls.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(note.imageUrls.prefix(4), id: \.self) { url in
+                            AsyncImage(url: URL(string: url)) { image in
+                                image.resizable().scaledToFill()
+                            } placeholder: {
+                                Rectangle().fill(theme.surfaceBackground)
+                            }
+                            .frame(width: 48, height: 48)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        if note.imageUrls.count > 4 {
+                            Text("+\(note.imageUrls.count - 4)")
+                                .font(.caption2.bold())
+                                .foregroundStyle(theme.textSecondary)
+                        }
+                    }
+                }
+
                 if !note.tags.isEmpty {
                     HStack(spacing: 4) {
                         ForEach(note.tags.prefix(3), id: \.self) { tag in

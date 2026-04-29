@@ -225,10 +225,10 @@ final class DataManager {
         } catch { showError("릴스 노트를 불러올 수 없습니다") }
     }
 
-    func createReelsNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, status: ReelsNoteStatus = .drafting, tags: [String] = []) async -> ReelsNoteDTO? {
+    func createReelsNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, status: ReelsNoteStatus = .drafting, tags: [String] = [], imageUrls: [String] = []) async -> ReelsNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
-            let dto = ReelsNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, status: status.rawValue, tags: tags)
+            let dto = ReelsNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, status: status.rawValue, tags: tags, imageUrls: imageUrls)
             let created: ReelsNoteDTO = try await supabase
                 .from("reels_notes").insert(dto).select().single().execute().value
             reelsNotes.insert(created, at: 0)
@@ -277,10 +277,10 @@ final class DataManager {
         } catch { showError("메모를 불러올 수 없습니다") }
     }
 
-    func createGeneralNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, tags: [String] = []) async -> GeneralNoteDTO? {
+    func createGeneralNote(title: String = "", plainContent: String = "", attributedContent: String? = nil, tags: [String] = [], imageUrls: [String] = []) async -> GeneralNoteDTO? {
         guard let wid = workspaceId, let uid = userId else { return nil }
         do {
-            let dto = GeneralNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, tags: tags)
+            let dto = GeneralNoteInsert(workspaceId: wid, createdBy: uid, title: title, plainContent: plainContent, attributedContent: attributedContent, tags: tags, imageUrls: imageUrls)
             let created: GeneralNoteDTO = try await supabase
                 .from("general_notes").insert(dto).select().single().execute().value
             generalNotes.insert(created, at: 0)
@@ -349,21 +349,23 @@ private struct SettlementInsert: Codable {
 private struct ReelsNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
     let plainContent: String; let attributedContent: String?
-    let status: String; let tags: [String]
+    let status: String; let tags: [String]; let imageUrls: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
         case title; case plainContent = "plain_content"
         case attributedContent = "attributed_content"; case status, tags
+        case imageUrls = "image_urls"
     }
 }
 
 private struct GeneralNoteInsert: Codable {
     let workspaceId: UUID; let createdBy: UUID; let title: String
     let plainContent: String; let attributedContent: String?
-    let tags: [String]
+    let tags: [String]; let imageUrls: [String]
     enum CodingKeys: String, CodingKey {
         case workspaceId = "workspace_id"; case createdBy = "created_by"
         case title; case plainContent = "plain_content"
         case attributedContent = "attributed_content"; case tags
+        case imageUrls = "image_urls"
     }
 }

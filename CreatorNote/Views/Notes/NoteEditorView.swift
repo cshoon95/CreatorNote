@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 enum NoteEditorMode {
     case reels(ReelsNoteDTO?)
@@ -23,6 +24,10 @@ struct NoteEditorView: View {
     @State private var editorCoordinator = RichTextCoordinator()
     @State private var showTemplateSheet = false
     @State private var isNewNote = false
+    @State private var imageUrls: [String] = []
+    @State private var newImages: [UIImage] = []
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var isUploading = false
 
     private var initialTemplateContent: String?
     private var initialTemplateTitle: String?
@@ -75,34 +80,14 @@ struct NoteEditorView: View {
                         .padding(.top, 24)
                         .padding(.bottom, 16)
 
-                    // 등록자·수정자 표시
-                    if existingCreatedBy != nil || existingUpdatedBy != nil {
-                        HStack(spacing: 12) {
-                            if let createdBy = existingCreatedBy {
-                                HStack(spacing: 4) {
-                                    Text("등록")
-                                        .font(.caption2)
-                                        .foregroundStyle(theme.textSecondary)
-                                    MemberChip(userId: createdBy)
-                                }
-                            }
-                            if let updatedBy = existingUpdatedBy {
-                                HStack(spacing: 4) {
-                                    Text("수정")
-                                        .font(.caption2)
-                                        .foregroundStyle(theme.textSecondary)
-                                    MemberChip(userId: updatedBy)
-                                }
-                            }
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 14)
-                    }
+                    authorInfo(theme: theme)
 
                     if isReelsMode {
                         reelsControls(theme: theme)
                     }
+
+                    // Image section
+                    imageSection(theme: theme)
 
                     Rectangle()
                         .fill(theme.divider)
@@ -121,8 +106,7 @@ struct NoteEditorView: View {
                         .fill(theme.divider)
                         .frame(height: 1)
 
-                    FormattingToolbar(coordinator: editorCoordinator)
-                        .safeAreaPadding(.bottom)
+                    bottomToolbar(theme: theme)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
             }
@@ -273,6 +257,120 @@ struct NoteEditorView: View {
         .padding(.bottom, 16)
     }
 
+    @ViewBuilder
+    private func authorInfo(theme: AppTheme) -> some View {
+        if existingCreatedBy != nil || existingUpdatedBy != nil {
+            HStack(spacing: 12) {
+                if let createdBy = existingCreatedBy {
+                    HStack(spacing: 4) {
+                        Text("등록")
+                            .font(.caption2)
+                            .foregroundStyle(theme.textSecondary)
+                        MemberChip(userId: createdBy)
+                    }
+                }
+                if let updatedBy = existingUpdatedBy {
+                    HStack(spacing: 4) {
+                        Text("수정")
+                            .font(.caption2)
+                            .foregroundStyle(theme.textSecondary)
+                        MemberChip(userId: updatedBy)
+                    }
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
+        }
+    }
+
+    @ViewBuilder
+    private func bottomToolbar(theme: AppTheme) -> some View {
+        let uploading = isUploading
+        HStack(spacing: 0) {
+            PhotosPicker(selection: $selectedPhotos, maxSelectionCount: 10, matching: .images) {
+                HStack(spacing: 5) {
+                    Image(systemName: "photo.on.rectangle.angled")
+                        .font(.system(size: 15))
+                    if uploading {
+                        ProgressView().scaleEffect(0.7)
+                    }
+                }
+                .foregroundStyle(theme.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+            }
+            .onChange(of: selectedPhotos) { _, items in
+                Task { await loadPhotos(items) }
+            }
+
+            FormattingToolbar(coordinator: editorCoordinator)
+        }
+        .safeAreaPadding(.bottom)
+    }
+
+    @ViewBuilder
+    private func imageSection(theme: AppTheme) -> some View {
+        let urls = imageUrls
+        let images = newImages
+        if !urls.isEmpty || !images.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(urls, id: \.self) { url in
+                        imageThumbnail(url: url, theme: theme)
+                    }
+                    ForEach(images.indices, id: \.self) { idx in
+                        newImageThumbnail(index: idx, image: images[idx])
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+            .padding(.bottom, 8)
+        }
+    }
+
+    @ViewBuilder
+    private func imageThumbnail(url: String, theme: AppTheme) -> some View {
+        ZStack(alignment: .topTrailing) {
+            AsyncImage(url: URL(string: url)) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Rectangle().fill(theme.surfaceBackground)
+            }
+            .frame(width: 100, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Button {
+                withAnimation { imageUrls.removeAll { $0 == url } }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white, .black.opacity(0.6))
+            }
+            .offset(x: 4, y: -4)
+        }
+    }
+
+    @ViewBuilder
+    private func newImageThumbnail(index: Int, image: UIImage) -> some View {
+        let idx = index
+        ZStack(alignment: .topTrailing) {
+            Image(uiImage: image)
+                .resizable().scaledToFill()
+                .frame(width: 100, height: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Button {
+                withAnimation { _ = newImages.remove(at: idx) }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.white, .black.opacity(0.6))
+            }
+            .offset(x: 4, y: -4)
+        }
+    }
+
     private func loadContent() {
         switch mode {
         case .reels(let note):
@@ -281,13 +379,32 @@ struct NoteEditorView: View {
             plainContent = note.plainContent
             status = note.reelsNoteStatus
             tags = note.tags
+            imageUrls = note.imageUrls
             loadAttributedContent(from: note.attributedContent)
         case .general(let note):
             guard let note else { return }
             title = note.title
             plainContent = note.plainContent
+            imageUrls = note.imageUrls
             loadAttributedContent(from: note.attributedContent)
         }
+    }
+
+    private func loadPhotos(_ items: [PhotosPickerItem]) async {
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                let maxSize: CGFloat = 1200
+                let resized = image.size.width > maxSize || image.size.height > maxSize
+                    ? image.preparingThumbnail(of: CGSize(
+                        width: image.size.width > image.size.height ? maxSize : maxSize * image.size.width / image.size.height,
+                        height: image.size.height > image.size.width ? maxSize : maxSize * image.size.height / image.size.width
+                    )) ?? image
+                    : image
+                newImages.append(resized)
+            }
+        }
+        selectedPhotos = []
     }
 
     private func loadAttributedContent(from base64String: String?) {
@@ -308,6 +425,16 @@ struct NoteEditorView: View {
         isSaving = true
         defer { isSaving = false }
         DataManager.shared.errorMessage = nil
+
+        // Upload new images
+        if !newImages.isEmpty {
+            isUploading = true
+            let uploadedUrls = await StorageManager.shared.uploadImages(newImages)
+            imageUrls.append(contentsOf: uploadedUrls)
+            newImages = []
+            isUploading = false
+        }
+
         let rtfBase64: String? = {
             guard let data = try? attributedContent.data(
                 from: NSRange(location: 0, length: attributedContent.length),
@@ -324,6 +451,7 @@ struct NoteEditorView: View {
                 updated.attributedContent = rtfBase64
                 updated.status = status.rawValue
                 updated.tags = tags
+                updated.imageUrls = imageUrls
                 updated.updatedAt = .now
                 updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateReelsNote(updated)
@@ -333,7 +461,8 @@ struct NoteEditorView: View {
                     plainContent: plainContent,
                     attributedContent: rtfBase64,
                     status: status,
-                    tags: tags
+                    tags: tags,
+                    imageUrls: imageUrls
                 )
             }
         case .general(let existing):
@@ -341,6 +470,7 @@ struct NoteEditorView: View {
                 updated.title = title
                 updated.plainContent = plainContent
                 updated.attributedContent = rtfBase64
+                updated.imageUrls = imageUrls
                 updated.updatedAt = .now
                 updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateGeneralNote(updated)
@@ -348,7 +478,8 @@ struct NoteEditorView: View {
                 _ = await DataManager.shared.createGeneralNote(
                     title: title,
                     plainContent: plainContent,
-                    attributedContent: rtfBase64
+                    attributedContent: rtfBase64,
+                    imageUrls: imageUrls
                 )
             }
         }

@@ -7,6 +7,7 @@ struct GeneralNoteDTO: Codable, Identifiable, Sendable {
     var attributedContent: String?
     var plainContent: String
     var tags: [String]
+    var imageUrls: [String]
     var isPinned: Bool
     var createdBy: UUID?
     var updatedBy: UUID?
@@ -18,6 +19,7 @@ struct GeneralNoteDTO: Codable, Identifiable, Sendable {
         case workspaceId = "workspace_id"
         case attributedContent = "attributed_content"
         case plainContent = "plain_content"
+        case imageUrls = "image_urls"
         case isPinned = "is_pinned"
         case createdBy = "created_by"
         case updatedBy = "updated_by"
