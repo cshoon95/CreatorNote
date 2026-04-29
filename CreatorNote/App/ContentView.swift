@@ -62,6 +62,7 @@ struct ContentView: View {
                             navigationResetID = UUID()
                         }
                         selectedTab = tab
+                        AnalyticsManager.shared.trackScreenView(tab.rawValue)
                     } label: {
                         VStack(spacing: 4) {
                             Image(systemName: tab.icon)
@@ -101,6 +102,7 @@ struct ContentView: View {
         }
         .animation(.spring(duration: 0.4), value: DataManager.shared.errorMessage)
         .task {
+            AnalyticsManager.shared.trackScreenView("홈")
             await DataManager.shared.fetchAll()
         }
     }

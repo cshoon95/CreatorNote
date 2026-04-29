@@ -17,6 +17,7 @@
 		2E715BFD801CFBD0540A83A8 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A61BAA6F53280E738CBE7233 /* ProfileView.swift */; };
 		319EA9ABC31FEA0701E51614 /* GlobalSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9482AB7571BD38F57A1B3263 /* GlobalSearchView.swift */; };
 		3D20A7EB21D6F6921B5E514D /* DataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B4BF7946EF952979CE0654 /* DataManager.swift */; };
+		ANLY001A1B2C3D4E5F6A7B8C /* AnalyticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ANLY002A1B2C3D4E5F6A7B8C /* AnalyticsManager.swift */; };
 		43364264714530FF77049C64 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A698731D7D8831F4C9F897B /* ThemeManager.swift */; };
 		46729D13684A69796AC6627E /* WorkspaceSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E6FA966D4C1F40DBB9AA7A /* WorkspaceSetupView.swift */; };
 		494D03BE3DEBC4901755415D /* SettlementReportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EDB450A02D59DCB0680530C /* SettlementReportView.swift */; };
@@ -79,6 +80,7 @@
 		68C83C6A490E491108C08EE4 /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		70D4F9C853176FB583D500A7 /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		77B4BF7946EF952979CE0654 /* DataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataManager.swift; sourceTree = "<group>"; };
+		ANLY002A1B2C3D4E5F6A7B8C /* AnalyticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsManager.swift; sourceTree = "<group>"; };
 		83E8E130F9F72D32CCD70233 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		864CB0507852117586B159F6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		8B428B1FFFA85E7BF3D2A7C0 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
@@ -324,6 +326,7 @@
 			isa = PBXGroup;
 			children = (
 				CB4EEA1FC0C7CB74602E307B /* AuthManager.swift */,
+				ANLY002A1B2C3D4E5F6A7B8C /* AnalyticsManager.swift */,
 				77B4BF7946EF952979CE0654 /* DataManager.swift */,
 				46BA7BB7610B77AB953249C1 /* SupabaseManager.swift */,
 				9BF0400AC59E72918F8E5639 /* WorkspaceManager.swift */,
@@ -441,6 +444,7 @@
 				CAE222F939561A9028407B93 /* CreatorNoteApp.swift in Sources */,
 				A927D7B27033FD3A3B5B54C3 /* CurrencyFormatter.swift in Sources */,
 				9B7D566DA96FEE0E27CEC716 /* DashboardView.swift in Sources */,
+				ANLY001A1B2C3D4E5F6A7B8C /* AnalyticsManager.swift in Sources */,
 				3D20A7EB21D6F6921B5E514D /* DataManager.swift in Sources */,
 				515A8C1FDBA55B7F83097704 /* GeneralNoteDTO.swift in Sources */,
 				8E84540D35D290A594DDB4E5 /* GeneralNoteListView.swift in Sources */,
@@ -496,14 +500,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;
@@ -518,14 +522,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = CreatorNote/Resources/CreatorNote.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = XH7F9CHU48;
 				INFOPLIST_FILE = CreatorNote/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.0.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.soohoon.CreatorNote;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = minimal;

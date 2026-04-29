@@ -64,6 +64,7 @@ final class DataManager {
         errorCounter += 1
         let myCount = errorCounter
         errorMessage = message
+        AnalyticsManager.shared.logError(message: message, type: "api")
         Task {
             try? await Task.sleep(for: .seconds(3))
             if errorCounter == myCount { errorMessage = nil }
