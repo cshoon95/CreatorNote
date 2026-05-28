@@ -10,6 +10,7 @@ struct SettlementFormView: View {
     @State private var amountText = ""
     @State private var feeText = ""
     @State private var taxText = ""
+    @State private var auto33 = false   // 3.3% 원천징수 자동 적용
     @State private var settlementDate = Date()
     @State private var hasSettlementDate = false
     @State private var isPaid = false
@@ -39,7 +40,9 @@ struct SettlementFormView: View {
         let formatted = Self.numberFormatter.string(from: NSNumber(value: number)) ?? digits
         return formatted + "원"
     }
-    private var netAmount: Double { parsedAmount - parsedFee - parsedTax }
+    private var auto33TaxAmount: Double { (parsedAmount * 0.033).rounded() }
+    private var effectiveTax: Double { auto33 ? auto33TaxAmount : parsedTax }
+    private var netAmount: Double { parsedAmount - parsedFee - effectiveTax }
 
     private var canSave: Bool {
         !brandName.trimmingCharacters(in: .whitespaces).isEmpty && !isLoading
@@ -105,15 +108,39 @@ struct SettlementFormView: View {
                                         .font(.subheadline)
                                         .foregroundStyle(theme.textSecondary)
                                         .frame(width: 60, alignment: .leading)
-                                    TextField("0원", text: $taxText)
-                                        .keyboardType(.numberPad)
-                                        .focused($focusedField, equals: .tax)
-                                        .foregroundStyle(theme.textPrimary)
-                                        .onChange(of: taxText) { _, new in
-                                            let formatted = formatCurrency(new)
-                                            if formatted != new { taxText = formatted }
-                                        }
+                                    if auto33 {
+                                        Text(Int(auto33TaxAmount).description + "원")
+                                            .foregroundStyle(theme.textPrimary.opacity(0.7))
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                    } else {
+                                        TextField("0원", text: $taxText)
+                                            .keyboardType(.numberPad)
+                                            .focused($focusedField, equals: .tax)
+                                            .foregroundStyle(theme.textPrimary)
+                                            .onChange(of: taxText) { _, new in
+                                                let formatted = formatCurrency(new)
+                                                if formatted != new { taxText = formatted }
+                                            }
+                                    }
                                 }
+                            }
+                            Divider()
+                                .background(theme.textSecondary.opacity(0.2))
+                                .padding(.horizontal, 16)
+                            rowField(theme: theme) {
+                                Toggle(isOn: $auto33) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("원천징수 3.3% 자동")
+                                            .foregroundStyle(theme.textPrimary)
+                                        Text(auto33
+                                             ? "세금에 \(Int(auto33TaxAmount))원 자동 적용"
+                                             : "프리랜서 표준 원천징수율")
+                                            .font(.caption)
+                                            .foregroundStyle(theme.textSecondary)
+                                    }
+                                }
+                                .tint(theme.primary)
+                                .onChange(of: auto33) { _, _ in Haptic.selection() }
                             }
                         }
                     }
@@ -257,6 +284,11 @@ struct SettlementFormView: View {
         if s.amount > 0 { amountText = formatCurrency(String(Int(s.amount))) }
         if s.fee > 0 { feeText = formatCurrency(String(Int(s.fee))) }
         if s.tax > 0 { taxText = formatCurrency(String(Int(s.tax))) }
+        // Auto-detect: if existing tax matches 3.3% of amount within rounding, turn on auto mode
+        if s.amount > 0 {
+            let expected = (s.amount * 0.033).rounded()
+            if abs(s.tax - expected) <= 1 { auto33 = true }
+        }
         hasSettlementDate = s.settlementDate != nil
         settlementDate = s.settlementDate ?? Date()
         isPaid = s.isPaid
@@ -272,7 +304,7 @@ struct SettlementFormView: View {
             updated.brandName = trimmedBrand
             updated.amount = parsedAmount
             updated.fee = parsedFee
-            updated.tax = parsedTax
+            updated.tax = effectiveTax
             updated.settlementDate = hasSettlementDate ? settlementDate : nil
             updated.isPaid = isPaid
             updated.memo = memo
@@ -282,7 +314,7 @@ struct SettlementFormView: View {
                 brandName: trimmedBrand,
                 amount: parsedAmount,
                 fee: parsedFee,
-                tax: parsedTax,
+                tax: effectiveTax,
                 settlementDate: hasSettlementDate ? settlementDate : nil,
                 isPaid: isPaid,
                 memo: memo

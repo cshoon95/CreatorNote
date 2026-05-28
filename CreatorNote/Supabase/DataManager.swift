@@ -92,6 +92,8 @@ final class DataManager {
                 .from("sponsorships").select()
                 .eq("workspace_id", value: wid.uuidString)
                 .order("end_date").execute().value
+            // Re-schedule local notifications whenever sponsorship state refreshes.
+            await NotificationManager.shared.scheduleAll(sponsorships: sponsorships)
         } catch { showError("협찬 목록을 불러올 수 없습니다") }
     }
 
@@ -141,6 +143,7 @@ final class DataManager {
         sponsorships.removeAll { $0.id == id }
         do {
             try await supabase.from("sponsorships").delete().eq("id", value: id.uuidString).execute()
+            NotificationManager.shared.cancel(sponsorshipId: id)
             ToastManager.shared.show("협찬이 삭제되었습니다", icon: "trash.fill")
         } catch {
             sponsorships = backup
@@ -256,9 +259,11 @@ final class DataManager {
 
     func deleteReelsNote(id: UUID) async {
         let backup = reelsNotes
+        let imagePaths = reelsNotes.first { $0.id == id }?.imageUrls ?? []
         reelsNotes.removeAll { $0.id == id }
         do {
             try await supabase.from("reels_notes").delete().eq("id", value: id.uuidString).execute()
+            await StorageManager.shared.deleteImages(paths: imagePaths)
             ToastManager.shared.show("릴스 노트가 삭제되었습니다", icon: "trash.fill")
         } catch {
             reelsNotes = backup
@@ -308,9 +313,11 @@ final class DataManager {
 
     func deleteGeneralNote(id: UUID) async {
         let backup = generalNotes
+        let imagePaths = generalNotes.first { $0.id == id }?.imageUrls ?? []
         generalNotes.removeAll { $0.id == id }
         do {
             try await supabase.from("general_notes").delete().eq("id", value: id.uuidString).execute()
+            await StorageManager.shared.deleteImages(paths: imagePaths)
             ToastManager.shared.show("메모가 삭제되었습니다", icon: "trash.fill")
         } catch {
             generalNotes = backup

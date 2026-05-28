@@ -72,7 +72,7 @@ struct SponsorshipListView: View {
                             emptyState(theme: theme)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(filtered) { item in
+                                ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
                                     NavigationLink(destination: SponsorshipDetailView(sponsorshipId: item.id)) {
                                         sponsorshipCard(item, theme: theme)
                                     }
@@ -84,6 +84,10 @@ struct SponsorshipListView: View {
                                             Label(item.isPinned ? "고정 해제" : "고정", systemImage: item.isPinned ? "pin.slash.fill" : "pin.fill")
                                         }
                                         .tint(.orange)
+                                    }
+
+                                    if (index + 1) % 5 == 0 && index < filtered.count - 1 {
+                                        AdBannerContainer()
                                     }
                                 }
                             }

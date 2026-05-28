@@ -43,6 +43,27 @@ struct SponsorshipFormView: View {
         !brandName.trimmingCharacters(in: .whitespaces).isEmpty && !isLoading
     }
 
+    /// Recent unique brands from existing sponsorships, filtered by current input.
+    /// Shown as chips below the brand text field when it's focused.
+    private var brandSuggestions: [String] {
+        let trimmedInput = brandName.trimmingCharacters(in: .whitespaces).lowercased()
+        let all = DataManager.shared.sponsorships
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .map(\.brandName)
+        var seen = Set<String>()
+        var result: [String] = []
+        for b in all {
+            let lower = b.lowercased()
+            if seen.contains(lower) { continue }
+            seen.insert(lower)
+            if !trimmedInput.isEmpty && lower == trimmedInput { continue }
+            if !trimmedInput.isEmpty && !lower.contains(trimmedInput) { continue }
+            result.append(b)
+            if result.count >= 8 { break }
+        }
+        return result
+    }
+
     var body: some View {
         let theme = themeManager.theme
         NavigationStack {
@@ -55,6 +76,28 @@ struct SponsorshipFormView: View {
                                 TextField("브랜드명 *", text: $brandName)
                                     .focused($focusedField, equals: .brandName)
                                     .foregroundStyle(theme.textPrimary)
+                            }
+                            if focusedField == .brandName, !brandSuggestions.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(brandSuggestions, id: \.self) { b in
+                                            Button {
+                                                Haptic.selection()
+                                                brandName = b
+                                            } label: {
+                                                Text(b)
+                                                    .font(.caption.bold())
+                                                    .padding(.horizontal, 10)
+                                                    .padding(.vertical, 6)
+                                                    .background(theme.primary.opacity(0.1))
+                                                    .foregroundStyle(theme.primary)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.bottom, 8)
+                                }
                             }
                             Divider()
                                 .background(theme.textSecondary.opacity(0.2))

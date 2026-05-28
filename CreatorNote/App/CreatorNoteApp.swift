@@ -8,6 +8,9 @@ struct InflueApp: App {
 
     init() {
         GADMobileAds.sharedInstance().start(completionHandler: nil)
+        Task { @MainActor in
+            await NotificationManager.shared.requestPermissionIfNeeded()
+        }
     }
 
     var body: some Scene {
@@ -63,6 +66,7 @@ struct RootView: View {
         .task {
             await AuthManager.shared.checkSession()
             if AuthManager.shared.isAuthenticated {
+                await WorkspaceManager.shared.restoreFromStorage()
                 await WorkspaceManager.shared.fetchWorkspaces()
             }
             ready = true
@@ -70,6 +74,7 @@ struct RootView: View {
         .onChange(of: AuthManager.shared.isAuthenticated) {
             if AuthManager.shared.isAuthenticated {
                 Task {
+                    await WorkspaceManager.shared.restoreFromStorage()
                     await WorkspaceManager.shared.fetchWorkspaces()
                 }
             }

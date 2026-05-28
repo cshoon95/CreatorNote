@@ -24,10 +24,13 @@ struct NoteEditorView: View {
     @State private var editorCoordinator = RichTextCoordinator()
     @State private var showTemplateSheet = false
     @State private var isNewNote = false
-    @State private var imageUrls: [String] = []
+    @State private var imagePaths: [String] = []
+    @State private var signedUrls: [String: URL] = [:]
+    @State private var removedPaths: [String] = []
     @State private var newImages: [UIImage] = []
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var isUploading = false
+    @State private var showAiSheet = false
 
     private var initialTemplateContent: String?
     private var initialTemplateTitle: String?
@@ -121,6 +124,17 @@ struct NoteEditorView: View {
                     .font(.body)
                     .foregroundStyle(theme.textSecondary)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Haptic.selection()
+                        showAiSheet = true
+                    } label: {
+                        Image(systemName: "sparkles")
+                            .font(.body.bold())
+                            .foregroundStyle(theme.primary)
+                    }
+                    .accessibilityLabel("AI 어시스트")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Haptic.success()
@@ -136,6 +150,21 @@ struct NoteEditorView: View {
                         }
                     }
                     .disabled(isSaving)
+                }
+            }
+            .sheet(isPresented: $showAiSheet) {
+                AiAssistSheet(initialKind: isReelsMode ? .reelsScriptAdam : .general) { text in
+                    let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    let merged: String
+                    if plainContent.isEmpty {
+                        merged = trimmed
+                    } else {
+                        merged = plainContent.trimmingCharacters(in: .whitespacesAndNewlines) + "\n\n" + trimmed
+                    }
+                    plainContent = merged
+                    attributedContent = NSAttributedString(string: merged)
+                    editorCoordinator.replaceText(merged)
                 }
             }
             .onAppear {
@@ -311,13 +340,13 @@ struct NoteEditorView: View {
 
     @ViewBuilder
     private func imageSection(theme: AppTheme) -> some View {
-        let urls = imageUrls
+        let paths = imagePaths
         let images = newImages
-        if !urls.isEmpty || !images.isEmpty {
+        if !paths.isEmpty || !images.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(urls, id: \.self) { url in
-                        imageThumbnail(url: url, theme: theme)
+                    ForEach(paths, id: \.self) { path in
+                        imageThumbnail(path: path, theme: theme)
                     }
                     ForEach(images.indices, id: \.self) { idx in
                         newImageThumbnail(index: idx, image: images[idx])
@@ -330,9 +359,10 @@ struct NoteEditorView: View {
     }
 
     @ViewBuilder
-    private func imageThumbnail(url: String, theme: AppTheme) -> some View {
+    private func imageThumbnail(path: String, theme: AppTheme) -> some View {
+        let url = signedUrls[path]
         ZStack(alignment: .topTrailing) {
-            AsyncImage(url: URL(string: url)) { image in
+            AsyncImage(url: url) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
                 Rectangle().fill(theme.surfaceBackground)
@@ -341,7 +371,10 @@ struct NoteEditorView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button {
-                withAnimation { imageUrls.removeAll { $0 == url } }
+                withAnimation {
+                    removedPaths.append(path)
+                    imagePaths.removeAll { $0 == path }
+                }
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 20))
@@ -379,14 +412,19 @@ struct NoteEditorView: View {
             plainContent = note.plainContent
             status = note.reelsNoteStatus
             tags = note.tags
-            imageUrls = note.imageUrls
+            imagePaths = note.imageUrls
             loadAttributedContent(from: note.attributedContent)
         case .general(let note):
             guard let note else { return }
             title = note.title
             plainContent = note.plainContent
-            imageUrls = note.imageUrls
+            imagePaths = note.imageUrls
             loadAttributedContent(from: note.attributedContent)
+        }
+        if !imagePaths.isEmpty {
+            Task {
+                signedUrls = await StorageManager.shared.signedURLs(for: imagePaths)
+            }
         }
     }
 
@@ -426,11 +464,17 @@ struct NoteEditorView: View {
         defer { isSaving = false }
         DataManager.shared.errorMessage = nil
 
+        // Delete removed images from Storage
+        if !removedPaths.isEmpty {
+            await StorageManager.shared.deleteImages(paths: removedPaths)
+            removedPaths = []
+        }
+
         // Upload new images
         if !newImages.isEmpty {
             isUploading = true
-            let uploadedUrls = await StorageManager.shared.uploadImages(newImages)
-            imageUrls.append(contentsOf: uploadedUrls)
+            let uploadedPaths = await StorageManager.shared.uploadImages(newImages)
+            imagePaths.append(contentsOf: uploadedPaths)
             newImages = []
             isUploading = false
         }
@@ -451,7 +495,7 @@ struct NoteEditorView: View {
                 updated.attributedContent = rtfBase64
                 updated.status = status.rawValue
                 updated.tags = tags
-                updated.imageUrls = imageUrls
+                updated.imageUrls = imagePaths
                 updated.updatedAt = .now
                 updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateReelsNote(updated)
@@ -462,7 +506,7 @@ struct NoteEditorView: View {
                     attributedContent: rtfBase64,
                     status: status,
                     tags: tags,
-                    imageUrls: imageUrls
+                    imageUrls: imagePaths
                 )
             }
         case .general(let existing):
@@ -470,7 +514,7 @@ struct NoteEditorView: View {
                 updated.title = title
                 updated.plainContent = plainContent
                 updated.attributedContent = rtfBase64
-                updated.imageUrls = imageUrls
+                updated.imageUrls = imagePaths
                 updated.updatedAt = .now
                 updated.updatedBy = AuthManager.shared.currentUser?.id
                 await DataManager.shared.updateGeneralNote(updated)
@@ -479,7 +523,7 @@ struct NoteEditorView: View {
                     title: title,
                     plainContent: plainContent,
                     attributedContent: rtfBase64,
-                    imageUrls: imageUrls
+                    imageUrls: imagePaths
                 )
             }
         }

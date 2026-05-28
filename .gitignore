@@ -40,3 +40,6 @@ Pods/
 *.swp
 *~
 .omc/
+
+# Supabase CLI temp files
+supabase/.temp/

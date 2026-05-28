@@ -52,7 +52,7 @@ struct SettlementListView: View {
                             emptyState(theme: theme)
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(filtered) { item in
+                                ForEach(Array(filtered.enumerated()), id: \.element.id) { index, item in
                                     NavigationLink(destination: SettlementDetailView(settlement: item)) {
                                         settlementCard(item, theme: theme)
                                     }
@@ -64,6 +64,10 @@ struct SettlementListView: View {
                                         } label: {
                                             Label("삭제", systemImage: "trash")
                                         }
+                                    }
+
+                                    if (index + 1) % 5 == 0 && index < filtered.count - 1 {
+                                        AdBannerContainer()
                                     }
                                 }
                             }

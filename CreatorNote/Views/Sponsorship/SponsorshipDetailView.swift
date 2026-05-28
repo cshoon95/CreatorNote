@@ -161,6 +161,55 @@ struct SponsorshipDetailView: View {
                     .padding(.horizontal)
                 }
 
+                // 연결된 릴스 노트
+                let linkedNotes = DataManager.shared.reelsNotes.filter { $0.sponsorshipId == sponsorship.id }
+                if !linkedNotes.isEmpty {
+                    ThemedCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Label("연결된 릴스 노트", systemImage: "film")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(theme.textSecondary)
+                                Spacer()
+                                Text("\(linkedNotes.count)개")
+                                    .font(.caption)
+                                    .foregroundStyle(theme.textSecondary)
+                            }
+                            ForEach(linkedNotes) { note in
+                                NavigationLink(destination: NoteEditorView(reelsNote: note)) {
+                                    HStack(spacing: 12) {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(theme.primary.opacity(0.6))
+                                            .frame(width: 4)
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text(note.title.isEmpty ? "제목 없음" : note.title)
+                                                .font(.subheadline.bold())
+                                                .foregroundStyle(theme.textPrimary)
+                                                .lineLimit(1)
+                                            Text(note.plainContent.isEmpty ? "내용 없음" : note.plainContent)
+                                                .font(.caption)
+                                                .foregroundStyle(theme.textSecondary)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        StatusBadge(status: note.reelsNoteStatus)
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(theme.textSecondary.opacity(0.5))
+                                    }
+                                    .padding(.vertical, 8)
+                                }
+                                .buttonStyle(.plain)
+                                if note.id != linkedNotes.last?.id {
+                                    Divider()
+                                        .background(theme.textSecondary.opacity(0.15))
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+
                 // 등록일
                 ThemedCard {
                     HStack {

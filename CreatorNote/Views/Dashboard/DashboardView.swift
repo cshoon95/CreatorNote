@@ -83,6 +83,9 @@ struct DashboardView: View {
                         todaySection(theme: theme)
                     }
 
+                    AdBannerContainer()
+                        .padding(.horizontal)
+
                     if !pendingSettlements.isEmpty {
                         pendingSection(theme: theme)
                     }
@@ -91,6 +94,9 @@ struct DashboardView: View {
                         expiringSection(theme: theme)
                     }
 
+                    AdBannerContainer()
+                        .padding(.horizontal)
+
                     if !reelsNotes.isEmpty {
                         recentNotesSection(theme: theme)
                     }
@@ -98,10 +104,10 @@ struct DashboardView: View {
                     if sponsorships.isEmpty && reelsNotes.isEmpty {
                         emptyState(theme: theme)
                     }
+
+                    AdBannerContainer()
+                        .padding(.horizontal)
                 }
-                AdBannerContainer()
-                    .padding(.horizontal)
-                    .padding(.top, 16)
 
                 .padding(.bottom, 100)
             }

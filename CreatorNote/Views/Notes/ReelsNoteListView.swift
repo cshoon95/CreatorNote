@@ -118,13 +118,17 @@ struct ReelsNoteListView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 10) {
-                            ForEach(filtered) { note in
+                            ForEach(Array(filtered.enumerated()), id: \.element.id) { index, note in
                                 noteCard(note, theme: theme)
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         Haptic.selection()
                                         selectedNote = note
                                     }
+
+                                if (index + 1) % 5 == 0 && index < filtered.count - 1 {
+                                    AdBannerContainer()
+                                }
                             }
                         }
                         .padding(.horizontal, 16)
@@ -221,14 +225,8 @@ struct ReelsNoteListView: View {
 
                 if !note.imageUrls.isEmpty {
                     HStack(spacing: 6) {
-                        ForEach(note.imageUrls.prefix(4), id: \.self) { url in
-                            AsyncImage(url: URL(string: url)) { image in
-                                image.resizable().scaledToFill()
-                            } placeholder: {
-                                Rectangle().fill(theme.surfaceBackground)
-                            }
-                            .frame(width: 48, height: 48)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        ForEach(note.imageUrls.prefix(4), id: \.self) { path in
+                            SignedImageView(path: path, size: 48, cornerRadius: 8, placeholder: theme.surfaceBackground)
                         }
                         if note.imageUrls.count > 4 {
                             Text("+\(note.imageUrls.count - 4)")
