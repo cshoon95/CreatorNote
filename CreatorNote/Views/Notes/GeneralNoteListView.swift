@@ -57,10 +57,6 @@ struct GeneralNoteListView: View {
                                         Haptic.selection()
                                         selectedNote = note
                                     }
-
-                                if (index + 1) % 5 == 0 && index < filtered.count - 1 {
-                                    AdBannerContainer()
-                                }
                             }
                         }
                         .padding(.horizontal, 16)

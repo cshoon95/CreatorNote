@@ -10,6 +10,9 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: "2.0.0"
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads
+    from: "11.0.0"
 
 settings:
   base:
@@ -25,6 +28,8 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
     settings:
       base:
         INFOPLIST_FILE: CreatorNote/Resources/Info.plist

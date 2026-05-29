@@ -83,9 +83,6 @@ struct DashboardView: View {
                         todaySection(theme: theme)
                     }
 
-                    AdBannerContainer()
-                        .padding(.horizontal)
-
                     if !pendingSettlements.isEmpty {
                         pendingSection(theme: theme)
                     }
@@ -93,9 +90,6 @@ struct DashboardView: View {
                     if !expiringSoon.isEmpty {
                         expiringSection(theme: theme)
                     }
-
-                    AdBannerContainer()
-                        .padding(.horizontal)
 
                     if !reelsNotes.isEmpty {
                         recentNotesSection(theme: theme)

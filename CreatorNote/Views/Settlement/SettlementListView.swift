@@ -65,10 +65,6 @@ struct SettlementListView: View {
                                             Label("삭제", systemImage: "trash")
                                         }
                                     }
-
-                                    if (index + 1) % 5 == 0 && index < filtered.count - 1 {
-                                        AdBannerContainer()
-                                    }
                                 }
                             }
                             .padding(.horizontal)
